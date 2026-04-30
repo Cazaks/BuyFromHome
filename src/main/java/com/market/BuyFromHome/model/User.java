@@ -1,9 +1,9 @@
 package com.market.BuyFromHome.model;
 
+import com.market.BuyFromHome.enums.AuthProvider;
 import com.market.BuyFromHome.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.Id;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,14 +17,15 @@ import java.util.List;
 @Builder
 public class User extends BasicEntity {
 
-    @jakarta.persistence.Id
-    private Long id1;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
-    private String fullName;
+    private String firstName;
+
+    @Column(nullable = false)
+    private String lastName;
 
     @Column(nullable = false, unique = true)
     private String email;
@@ -41,6 +42,10 @@ public class User extends BasicEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AuthProvider provider;
 
     @Column(nullable = false)
     private boolean enabled = true;

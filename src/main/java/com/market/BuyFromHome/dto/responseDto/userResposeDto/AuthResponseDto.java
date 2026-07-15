@@ -3,14 +3,12 @@ package com.market.BuyFromHome.dto.responseDto.userResposeDto;
 
 import com.market.BuyFromHome.enums.AuthProvider;
 import com.market.BuyFromHome.enums.Role;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Setter
 @Getter
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder
 public class AuthResponseDto {
 

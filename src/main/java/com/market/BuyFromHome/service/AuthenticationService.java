@@ -10,5 +10,5 @@ public interface AuthenticationService {
 
     AuthResponseDto login(UserLoginRequest requestDto);
 
-    AuthResponseDto googleAuth(GoogleAuthRequest requestDto);
+    AuthResponseDto googleRegister(GoogleAuthRequest requestDto);
 }

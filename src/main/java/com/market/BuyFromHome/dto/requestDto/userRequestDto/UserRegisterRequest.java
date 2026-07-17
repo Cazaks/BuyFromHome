@@ -5,12 +5,12 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.checkerframework.checker.units.qual.A;
 
-@Getter
-@Setter
+@Data
 @AllArgsConstructor
 public class UserRegisterRequest {
 
@@ -25,10 +25,14 @@ public class UserRegisterRequest {
     private String email;
 
     @NotBlank(message = "Password is required")
-    @Size(min = 8, message = "Password must be at least 8 characters")
+    @Pattern(
+            regexp = "^(?=\\S+$)(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@$!%*?&]).{9,}$",
+            message = "Password must be at least 9 characters, contain uppercase, lowercase, digit, special character and no spaces"
+    )
     private String password;
 
     @NotBlank(message = "Phone number is required")
-    @Pattern(regexp = "^(\\+234|0)[789][01]\\d{8}$", message = "Enter a valid Nigerian phone number")
+    @Pattern(regexp = "^(\\+234|0)[789][01]\\d{8}$",
+            message = "Enter a valid Nigerian phone number")
     private String phoneNumber;
 }

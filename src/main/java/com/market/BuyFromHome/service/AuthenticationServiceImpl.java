@@ -1,5 +1,6 @@
 package com.market.BuyFromHome.service;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.market.BuyFromHome.enums.AuthProvider;
 import com.market.BuyFromHome.enums.Role;
 import com.market.BuyFromHome.dto.requestDto.userRequestDto.GoogleAuthRequest;
@@ -22,6 +23,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
+    private final GoogleAuthService googleAuthService;
 
     @Value("${google.client.id}")
     private String googleClientId;
@@ -75,8 +77,41 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 
 
     @Override
-    public AuthResponseDto googleAuth(GoogleAuthRequest requestDto) {
-        return null;
+    public AuthResponseDto googleRegister(GoogleAuthRequest requestDto) {
+
+        GoogleIdToken.Payload payload =
+                googleAuthService.verifyToken(requestDto.getIdToken());
+
+        if (userRepository.existsByEmail(payload.getEmail())) {
+            throw new RuntimeException(
+                    "Email already registered: " + payload.getEmail());
+        }
+        User user = User.builder()
+                .firstName((String) payload.get("given_name"))
+                .lastName((String) payload.get("family_name"))
+                .email(payload.getEmail())
+                .googleId(payload.getSubject())
+                .provider(AuthProvider.GOOGLE)
+                .role(Role.CUSTOMER)
+                .enabled(true)
+                .build();
+
+        userRepository.save(user);
+
+        String token = jwtUtil.generateToken(
+                user.getEmail(),
+                user.getRole().name()
+        );
+
+        return AuthResponseDto.builder()
+                .token(token)
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .provider(user.getProvider())
+                .role(user.getRole())
+                .enabled(user.isEnabled())
+                .build();
     }
 
 }

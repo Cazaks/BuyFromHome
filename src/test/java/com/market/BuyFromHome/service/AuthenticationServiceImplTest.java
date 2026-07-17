@@ -38,6 +38,10 @@ public class AuthenticationServiceImplTest {
     @InjectMocks
     AuthenticationServiceImpl authenticationServiceImpl;
 
+    // ==========================
+    // LOCAL REGISTRATION TESTS
+    // ==========================
+
     @Test
     @DisplayName("Should register user successfully")
     void registerUserSuccessfully() {
@@ -85,6 +89,21 @@ public class AuthenticationServiceImplTest {
                 .hasMessageContaining("Email already registered");
     }
 
+
+    @Test
+    @DisplayName("Should throw exception when email is null or empty")
+    void shouldThrowExceptionWhenEmailIsNullOrEmpty() {
+
+        UserRegisterRequest registerRequest = new UserRegisterRequest(
+                "Caleb", "Ezak", null,
+                "password1234", "+2348079921348"
+        );
+
+        assertThatThrownBy(() -> authenticationServiceImpl.register(registerRequest))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Email cannot be null or empty");
+    }
+
     @Test
     @DisplayName("Should encode password before saving user")
     void shouldEncodePasswordBeforeSavingUser() {
@@ -110,6 +129,63 @@ public class AuthenticationServiceImplTest {
 
         verify(passwordEncoder).encode("password1234");
     }
+
+//    @Test
+//    @DisplayName("Should throw exception when password is empty")
+//    void shouldThrowExceptionWhenPasswordIsEmptyOrNull() {
+//
+//        UserRegisterRequest registerRequest = new UserRegisterRequest(
+//                "Caleb", "Ezak", "caleb@test.com",
+//                "", "+2348079921348"
+//        );
+//
+//        assertThatThrownBy(() -> authenticationServiceImpl.register(registerRequest))
+//                .isInstanceOf(RuntimeException.class)
+//                .hasMessageContaining("Password cannot be empty or null");
+//    }
+//
+//    @Test
+//    @DisplayName("Should throw exception when password contains spaces")
+//    void throwPasswordContainsSpaces() {
+//
+//        UserRegisterRequest registerRequest = new UserRegisterRequest(
+//                "Caleb", "Ezak", "caleb@test.com",
+//                "password 123", "+2348079921348"
+//        );
+//
+//        assertThatThrownBy(() -> authenticationServiceImpl.register(registerRequest))
+//                .isInstanceOf(RuntimeException.class)
+//                .hasMessageContaining("Password cannot contain spaces");
+//    }
+//
+//    @Test
+//    @DisplayName("Should throw exception when password contains only spaces")
+//    void throwPasswordContainsOnlySpaces() {
+//
+//        UserRegisterRequest registerRequest = new UserRegisterRequest(
+//                "Caleb", "Ezak", "caleb@test.com",
+//                "         ", "+2348079921348"
+//        );
+//
+//        assertThatThrownBy(() -> authenticationServiceImpl.register(registerRequest))
+//                .isInstanceOf(RuntimeException.class)
+//                .hasMessageContaining("Password cannot be empty or null");
+//    }
+
+//    @Test
+//    @DisplayName("Password should throw exception when it has less then 9 character")
+//    void throwPasswordLessThan9Characters() {
+//
+//        UserRegisterRequest registerRequest = new UserRegisterRequest(
+//                "Caleb", "Ezak", "Caleb@test.com",
+//                "password1234", "+2348079921348"
+//        );
+//
+//        assertThatThrownBy(() -> authenticationServiceImpl.register(registerRequest))
+//                .isInstanceOf(RuntimeException.class)
+//                .hasMessageContaining("Password must contain at least 9 characters");
+//    }
+
 
     @Test
     @DisplayName("Should save user with correct details")
@@ -150,7 +226,41 @@ public class AuthenticationServiceImplTest {
         assertThat(savedUser.isEnabled()).isTrue();
     }
 
-    
+    @Test
+    @DisplayName("Should generate JWT token after successful registration")
+    void shouldGenerateJwtTokenAfterRegistration() {
+
+        UserRegisterRequest registerRequest = new UserRegisterRequest(
+                "Caleb", "Ezak", "caleb@test.com",
+                "password1234", "+2348079921348"
+        );
+
+        when(userRepository.existsByEmail("caleb@test.com"))
+                .thenReturn(false);
+
+        when(passwordEncoder.encode("password1234"))
+                .thenReturn("hashedPassword");
+
+        when(userRepository.save(any(User.class)))
+                .thenAnswer(i -> i.getArgument(0));
+
+        when(jwtUtil.generateToken(anyString(), anyString()))
+                .thenReturn("mock.jwt.token");
+
+        authenticationServiceImpl.register(registerRequest);
+
+        verify(jwtUtil).generateToken(
+                "caleb@test.com",
+                Role.CUSTOMER.name()
+        );
+    }
+
+    // ==========================
+    // GOOGLE REGISTRATION TESTS
+    // ==========================
+
+
+
 
 
 }

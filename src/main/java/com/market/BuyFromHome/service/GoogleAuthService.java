@@ -26,21 +26,24 @@ public class GoogleAuthService {
                 .build();
     }
 
-    public GoogleIdToken.Payload verifyToken(String idTokenString)
-            throws GeneralSecurityException, IOException {
+    public GoogleIdToken.Payload verifyToken(String idTokenString){
 
-        GoogleIdToken idToken = verifier.verify(idTokenString);
+        try {
+            GoogleIdToken idToken = verifier.verify(idTokenString);
 
-        if (idToken == null) {
-            throw new RuntimeException("Invalid Google token");
+            if (idToken == null) {
+                throw new RuntimeException("Invalid Google token");
+            }
+
+            GoogleIdToken.Payload payload = idToken.getPayload();
+
+            if (!Boolean.TRUE.equals(payload.getEmailVerified())) {
+                throw new RuntimeException("Google email is not verified");
+            }
+
+            return payload;
+        } catch (GeneralSecurityException | IOException e) {
+            throw new RuntimeException("Failed to verify Google token", e);
         }
-
-        GoogleIdToken.Payload payload = idToken.getPayload();
-
-        if (!Boolean.TRUE.equals(payload.getEmailVerified())) {
-            throw new RuntimeException("Google email is not verified");
-        }
-
-        return payload;
     }
 }

@@ -35,6 +35,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
                     "Email already registered: " + requestDto.getEmail());
         }
 
+
         User user = User.builder()
                 .firstName(requestDto.getFirstName())
                 .lastName(requestDto.getLastName())

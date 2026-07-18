@@ -10,7 +10,7 @@ import com.market.BuyFromHome.dto.responseDto.userResposeDto.AuthResponseDto;
 import com.market.BuyFromHome.model.User;
 import com.market.BuyFromHome.repository.UserRepository;
 import com.market.BuyFromHome.security.JwtUtil;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,14 +29,17 @@ public class AuthenticationServiceImpl implements AuthenticationService{
     private String googleClientId;
 
 
+    // ==========================
+    // LOCAL REGISTRATION METHOD IMPLEMENTATION
+    // ==========================
     @Transactional
-    public AuthResponseDto register(UserRegisterRequest requestDto) {
+    @Override
+    public AuthResponseDto localRegister(UserRegisterRequest requestDto) {
 
         if (userRepository.existsByEmail(requestDto.getEmail())) {
             throw new RuntimeException(
                     "Email already registered: " + requestDto.getEmail());
         }
-
 
         User user = User.builder()
                 .firstName(requestDto.getFirstName())
@@ -49,33 +52,30 @@ public class AuthenticationServiceImpl implements AuthenticationService{
                 .enabled(true)
                 .build();
 
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
 
         String token = jwtUtil.generateToken(
-                user.getEmail(),
-                user.getRole().name()
+                savedUser.getEmail(),
+                savedUser.getRole().name()
         );
 
         return AuthResponseDto.builder()
+                .id(savedUser.getId())
                 .token(token)
-                .email(user.getEmail())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .phoneNumber(requestDto.getPhoneNumber())
-                .provider(user.getProvider())
-                .role(user.getRole())
-                .enabled(user.isEnabled())
+                .email(savedUser.getEmail())
+                .firstName(savedUser.getFirstName())
+                .lastName(savedUser.getLastName())
+                .phoneNumber(savedUser.getPhoneNumber())
+                .provider(savedUser.getProvider())
+                .role(savedUser.getRole())
+                .enabled(savedUser.isEnabled())
                 .build();
     }
 
-
-    @Override
-    public AuthResponseDto login(UserLoginRequest requestDto) {
-        return null;
-    }
-
-
-
+    // ==========================
+    // GOOGLE REGISTRATION METHOD IMPLEMENTATION
+    // ==========================
+    @Transactional
     @Override
     public AuthResponseDto googleRegister(GoogleAuthRequest requestDto) {
 
@@ -86,6 +86,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
             throw new RuntimeException(
                     "Email already registered: " + payload.getEmail());
         }
+
         User user = User.builder()
                 .firstName((String) payload.get("given_name"))
                 .lastName((String) payload.get("family_name"))
@@ -96,12 +97,53 @@ public class AuthenticationServiceImpl implements AuthenticationService{
                 .enabled(true)
                 .build();
 
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        String token = jwtUtil.generateToken(
+                savedUser.getEmail(),
+                savedUser.getRole().name()
+        );
+
+        return AuthResponseDto.builder()
+                .id(savedUser.getId())
+                .token(token)
+                .email(savedUser.getEmail())
+                .firstName(savedUser.getFirstName())
+                .lastName(savedUser.getLastName())
+                .provider(savedUser.getProvider())
+                .role(savedUser.getRole())
+                .enabled(savedUser.isEnabled())
+                .build();
+    }
+
+    // ==========================
+    // LOCAL LOGIN METHOD IMPLEMENTATION
+    // ==========================
+    @Override
+    @Transactional(readOnly = true)
+    public AuthResponseDto localLogin(UserLoginRequest requestDto) {
+        User user = userRepository.findByEmail(requestDto.getEmail())
+                .orElseThrow(() ->
+                        new RuntimeException("Invalid email or password"));
+
+        if (user.getProvider() == AuthProvider.GOOGLE) {
+            throw new RuntimeException("Please sign in with Google");
+        }
+
+        if (!user.isEnabled()) {
+            throw new RuntimeException("Account is disabled");
+        }
+
+        if (!passwordEncoder.matches(
+                requestDto.getPassword(),
+                user.getPassword())) {
+
+            throw new RuntimeException("Invalid email or password");
+        }
 
         String token = jwtUtil.generateToken(
                 user.getEmail(),
-                user.getRole().name()
-        );
+                user.getRole().name());
 
         return AuthResponseDto.builder()
                 .token(token)
@@ -114,4 +156,42 @@ public class AuthenticationServiceImpl implements AuthenticationService{
                 .build();
     }
 
+    // ==========================
+    // GOOGLE LOGIN METHOD IMPLEMENTATION
+    // ==========================
+    @Transactional
+    @Override
+    public AuthResponseDto googleLogin(GoogleAuthRequest requestDto) {
+
+        GoogleIdToken.Payload payload =
+                googleAuthService.verifyToken(requestDto.getIdToken());
+
+        User user = userRepository.findByEmail(payload.getEmail())
+                .orElseThrow(() ->
+                        new RuntimeException("Google account is not registered"));
+
+        // Link the Google account if this is the first Google login
+        if (user.getGoogleId() == null) {
+            user.setGoogleId(payload.getSubject());
+            userRepository.save(user);
+        }
+
+        if (!user.isEnabled()) {
+            throw new RuntimeException("Account is disabled");
+        }
+
+        String token = jwtUtil.generateToken(
+                user.getEmail(),
+                user.getRole().name());
+
+        return AuthResponseDto.builder()
+                .token(token)
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .provider(user.getProvider())
+                .role(user.getRole())
+                .enabled(user.isEnabled())
+                .build();
+    }
 }

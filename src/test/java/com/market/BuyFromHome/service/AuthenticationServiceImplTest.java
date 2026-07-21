@@ -1,7 +1,9 @@
 package com.market.BuyFromHome.service;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import java.util.Optional;
 import com.market.BuyFromHome.dto.requestDto.userRequestDto.GoogleAuthRequest;
+import com.market.BuyFromHome.dto.requestDto.userRequestDto.UserLoginRequest;
 import com.market.BuyFromHome.dto.requestDto.userRequestDto.UserRegisterRequest;
 import com.market.BuyFromHome.dto.responseDto.userResposeDto.AuthResponseDto;
 import com.market.BuyFromHome.enums.AuthProvider;
@@ -49,7 +51,7 @@ public class AuthenticationServiceImplTest {
 
     @Test
     @DisplayName("Should register user successfully")
-    void registerUserSuccessfully() {
+    void localRegisterUserSuccessfully() {
 
         UserRegisterRequest registerRequest = new UserRegisterRequest(
                 "Caleb", "Ezak", "caleb@test.com",
@@ -68,7 +70,7 @@ public class AuthenticationServiceImplTest {
                 .thenReturn("mock.jwt.token");
 
         AuthResponseDto responseDto =
-                authenticationServiceImpl.register(registerRequest);
+                authenticationServiceImpl.localRegister(registerRequest);
 
         assertThat(responseDto.getFirstName()).isEqualTo("Caleb");
         assertThat(responseDto.getLastName()).isEqualTo("Ezak");
@@ -89,7 +91,7 @@ public class AuthenticationServiceImplTest {
         when(userRepository.existsByEmail("caleb@test.com"))
                 .thenReturn(true);
 
-        assertThatThrownBy(() -> authenticationServiceImpl.register(registerRequest))
+        assertThatThrownBy(() -> authenticationServiceImpl.localRegister(registerRequest))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Email already registered");
     }
@@ -130,7 +132,7 @@ public class AuthenticationServiceImplTest {
         when(jwtUtil.generateToken(anyString(), anyString()))
                 .thenReturn("mock.jwt.token");
 
-        authenticationServiceImpl.register(registerRequest);
+        authenticationServiceImpl.localRegister(registerRequest);
 
         verify(passwordEncoder).encode("password1234");
     }
@@ -213,7 +215,7 @@ public class AuthenticationServiceImplTest {
         when(jwtUtil.generateToken(anyString(), anyString()))
                 .thenReturn("mock.jwt.token");
 
-        authenticationServiceImpl.register(registerRequest);
+        authenticationServiceImpl.localRegister(registerRequest);
 
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
 
@@ -252,7 +254,7 @@ public class AuthenticationServiceImplTest {
         when(jwtUtil.generateToken(anyString(), anyString()))
                 .thenReturn("mock.jwt.token");
 
-        authenticationServiceImpl.register(registerRequest);
+        authenticationServiceImpl.localRegister(registerRequest);
 
         verify(jwtUtil).generateToken(
                 "caleb@test.com",
@@ -266,7 +268,7 @@ public class AuthenticationServiceImplTest {
 
     @Test
     @DisplayName("Should register Google user successfully")
-    void registerGoogleUserSuccessfully() {
+    void localRegisterGoogleUserSuccessfully() {
 
         GoogleAuthRequest request = new GoogleAuthRequest();
         request.setIdToken("mock-id-token");
@@ -419,6 +421,268 @@ public class AuthenticationServiceImplTest {
     }
 
 
+    // ==========================
+    // LOCAL LOGIN TESTS
+    // ==========================
+    @Test
+    @DisplayName("Should login successfully")
+    void loginSuccessfully() {
+
+        UserLoginRequest request = new UserLoginRequest(
+                "caleb@test.com",
+                "password1234"
+        );
+
+        User user = User.builder()
+                .email("caleb@test.com")
+                .password("hashedPassword")
+                .role(Role.CUSTOMER)
+                .enabled(true)
+                .provider(AuthProvider.LOCAL)
+                .build();
+
+        when(userRepository.findByEmail("caleb@test.com"))
+                .thenReturn(Optional.of(user));
+
+        when(passwordEncoder.matches("password1234", "hashedPassword"))
+                .thenReturn(true);
+
+        when(jwtUtil.generateToken(anyString(), anyString()))
+                .thenReturn("mock.jwt.token");
+
+        AuthResponseDto response =
+                authenticationServiceImpl.localLogin(request);
+
+        assertThat(response.getEmail()).isEqualTo("caleb@test.com");
+        assertThat(response.getToken()).isEqualTo("mock.jwt.token");
+    }
+
+    @Test
+    @DisplayName("Should throw exception when email does not exist")
+    void throwEmailDoesNotExist() {
+
+        UserLoginRequest request = new  UserLoginRequest(
+                "caleb@test.com",
+                "password1234"
+        );
+
+        when(userRepository.findByEmail("caleb@test.com"))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                authenticationServiceImpl.localLogin(request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Invalid email or password");
+    }
+
+    @Test
+    @DisplayName("Should throw exception when account is disabled")
+    void throwAccountDisabled() {
+
+        UserLoginRequest request = new UserLoginRequest(
+                "caleb@test.com",
+                "password1234"
+        );
+
+        User user = User.builder()
+                .email("caleb@test.com")
+                .password("hashedPassword")
+                .provider(AuthProvider.LOCAL)
+                .enabled(false)
+                .role(Role.CUSTOMER)
+                .build();
+
+        when(userRepository.findByEmail("caleb@test.com"))
+                .thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() ->
+                authenticationServiceImpl.localLogin(request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Account is disabled");
+    }
+
+    @Test
+    @DisplayName("Should throw exception when password is incorrect")
+    void throwIncorrectPassword() {
+
+        UserLoginRequest request = new UserLoginRequest(
+                "caleb@test.com",
+                "password1234"
+        );
+
+        User user = User.builder()
+                .email("caleb@test.com")
+                .password("hashedPassword")
+                .provider(AuthProvider.LOCAL)
+                .enabled(true)
+                .role(Role.CUSTOMER)
+                .build();
+
+        when(userRepository.findByEmail("caleb@test.com"))
+                .thenReturn(Optional.of(user));
+
+        when(passwordEncoder.matches(
+                "password1234",
+                "hashedPassword"))
+                .thenReturn(false);
+
+        assertThatThrownBy(() ->
+                authenticationServiceImpl.localLogin(request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Invalid email or password");
+    }
+
+    @Test
+    @DisplayName("Should throw exception when Google user logs in locally")
+    void throwGoogleLoginWithLocalLogin() {
+
+        UserLoginRequest request = new UserLoginRequest(
+                "caleb@test.com",
+                "password1234"
+        );
+
+        User user = User.builder()
+                .email("caleb@test.com")
+                .provider(AuthProvider.GOOGLE)
+                .enabled(true)
+                .role(Role.CUSTOMER)
+                .build();
+
+        when(userRepository.findByEmail("caleb@test.com"))
+                .thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() ->
+                authenticationServiceImpl.localLogin(request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Please sign in with Google");
+    }
+
+    // ==========================
+    // GOOGLE LOGIN TESTS
+    // ==========================
+
+    @Test
+    @DisplayName("Should login Google user successfully")
+    void loginGoogleUserSuccessfully() {
+
+        GoogleAuthRequest request = new GoogleAuthRequest();
+        request.setIdToken("mock-id-token");
+
+        GoogleIdToken.Payload payload = mock(GoogleIdToken.Payload.class);
+
+        when(payload.getEmail()).thenReturn("caleb@test.com");
+
+        when(googleAuthService.verifyToken("mock-id-token"))
+                .thenReturn(payload);
+
+        User user = User.builder()
+                .firstName("Caleb")
+                .lastName("Ezak")
+                .email("caleb@test.com")
+                .googleId("google123")
+                .provider(AuthProvider.GOOGLE)
+                .role(Role.CUSTOMER)
+                .enabled(true)
+                .build();
+
+        when(userRepository.findByEmail("caleb@test.com"))
+                .thenReturn(java.util.Optional.of(user));
+
+        when(jwtUtil.generateToken(anyString(), anyString()))
+                .thenReturn("mock.jwt.token");
+
+        AuthResponseDto response =
+                authenticationServiceImpl.googleLogin(request);
+
+        assertThat(response.getEmail()).isEqualTo("caleb@test.com");
+        assertThat(response.getProvider()).isEqualTo(AuthProvider.GOOGLE);
+        assertThat(response.getToken()).isEqualTo("mock.jwt.token");
+    }
+
+    @Test
+    @DisplayName("Should throw exception when Google account is not registered")
+    void throwGoogleAccountNotRegistered() {
+
+        GoogleAuthRequest request = new GoogleAuthRequest();
+        request.setIdToken("mock-id-token");
+
+        GoogleIdToken.Payload payload = mock(GoogleIdToken.Payload.class);
+
+        when(payload.getEmail()).thenReturn("caleb@test.com");
+
+        when(googleAuthService.verifyToken("mock-id-token"))
+                .thenReturn(payload);
+
+        when(userRepository.findByEmail("caleb@test.com"))
+                .thenReturn(java.util.Optional.empty());
+
+        assertThatThrownBy(() ->
+                authenticationServiceImpl.googleLogin(request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Google account is not registered");
+    }
+
+    @Test
+    @DisplayName("Should throw exception when Google account is disabled")
+    void throwDisabledGoogleAccount() {
+
+        GoogleAuthRequest request = new GoogleAuthRequest();
+        request.setIdToken("mock-id-token");
+
+        GoogleIdToken.Payload payload = mock(GoogleIdToken.Payload.class);
+
+        when(payload.getEmail()).thenReturn("caleb@test.com");
+
+        when(googleAuthService.verifyToken("mock-id-token"))
+                .thenReturn(payload);
+
+        User user = User.builder()
+                .email("caleb@test.com")
+                .provider(AuthProvider.GOOGLE)
+                .role(Role.CUSTOMER)
+                .enabled(false)
+                .build();
+
+        when(userRepository.findByEmail("caleb@test.com"))
+                .thenReturn(java.util.Optional.of(user));
+
+        assertThatThrownBy(() ->
+                authenticationServiceImpl.googleLogin(request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Account is disabled");
+    }
+
+    @Test
+    @DisplayName("Should verify Google token during login")
+    void shouldVerifyGoogleTokenDuringLogin() {
+
+        GoogleAuthRequest request = new GoogleAuthRequest();
+        request.setIdToken("mock-id-token");
+
+        GoogleIdToken.Payload payload = mock(GoogleIdToken.Payload.class);
+
+        when(payload.getEmail()).thenReturn("caleb@test.com");
+
+        when(googleAuthService.verifyToken("mock-id-token"))
+                .thenReturn(payload);
+
+        User user = User.builder()
+                .email("caleb@test.com")
+                .provider(AuthProvider.GOOGLE)
+                .role(Role.CUSTOMER)
+                .enabled(true)
+                .build();
+
+        when(userRepository.findByEmail(anyString()))
+                .thenReturn(java.util.Optional.of(user));
+
+        when(jwtUtil.generateToken(anyString(), anyString()))
+                .thenReturn("mock.jwt.token");
+
+        authenticationServiceImpl.googleLogin(request);
+
+        verify(googleAuthService).verifyToken("mock-id-token");
+    }
 
 }
 

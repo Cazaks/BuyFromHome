@@ -113,4 +113,26 @@ public class ProductCategoryServiceImpl implements ProductCategoryService{
 
 
 
+    @Transactional
+    @Override
+    public ProductCategoryResponseDto disableProductCategory(Long id){
+
+        ProductCategory category = productCategoryRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Product category not found"));
+
+        category.setEnabled(false);
+
+        ProductCategory disableCategory = productCategoryRepository.save(category);
+
+        return ProductCategoryResponseDto.builder()
+                .id(disableCategory.getId())
+                .name(disableCategory.getName())
+                .description(disableCategory.getDescription())
+                .enabled(disableCategory.isEnabled())
+                .build();
+    }
+
+
+
 }

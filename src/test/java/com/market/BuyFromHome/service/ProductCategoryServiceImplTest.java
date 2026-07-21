@@ -14,6 +14,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -102,5 +105,141 @@ class ProductCategoryServiceImplTest {
                 .isEqualTo("Rice, Beans, Garri");
         assertThat(savedCategory.isEnabled()).isTrue();
     }
+
+    @Test
+    @DisplayName("Should return created product category")
+    void shouldReturnCreatedProductCategory() {
+
+        ProductCategoryRequestDto requestDto = new ProductCategoryRequestDto();
+        requestDto.setName("Grains");
+        requestDto.setDescription("Rice, Beans, Garri");
+
+        ProductCategory savedCategory = ProductCategory.builder()
+                .id(1L)
+                .name("Grains")
+                .description("Rice, Beans, Garri")
+                .enabled(true)
+                .build();
+
+        when(productCategoryRepository.existsByNameIgnoreCase("Grains"))
+                .thenReturn(false);
+
+        when(productCategoryRepository.save(any(ProductCategory.class)))
+                .thenReturn(savedCategory);
+
+        ProductCategoryResponseDto response =
+                productCategoryServiceImpl.createProductCategory(requestDto);
+
+        assertThat(response.getId()).isEqualTo(1L);
+        assertThat(response.getName()).isEqualTo("Grains");
+        assertThat(response.getDescription()).isEqualTo("Rice, Beans, Garri");
+        assertThat(response.isEnabled()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Should get product category by id")
+    void shouldGetProductCategoryById() {
+
+        ProductCategory category = ProductCategory.builder()
+                .id(1L)
+                .name("Grains")
+                .description("Rice, Beans, Garri")
+                .enabled(true)
+                .build();
+
+        when(productCategoryRepository.findById(1L))
+                .thenReturn(Optional.of(category));
+
+        ProductCategoryResponseDto response =
+                productCategoryServiceImpl.getProductCategoryById(1L);
+
+        assertThat(response.getId()).isEqualTo(1L);
+        assertThat(response.getName()).isEqualTo("Grains");
+        assertThat(response.getDescription())
+                .isEqualTo("Rice, Beans, Garri");
+        assertThat(response.isEnabled()).isTrue();
+
+        verify(productCategoryRepository).findById(1L);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when product category is not found")
+    void shouldThrowExceptionWhenProductCategoryIsNotFound() {
+
+        when(productCategoryRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                productCategoryServiceImpl.getProductCategoryById(1L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Product category not found");
+
+        verify(productCategoryRepository).findById(1L);
+    }
+
+    @Test
+    @DisplayName("Should get all product categories")
+    void shouldGetAllProductCategories() {
+
+        ProductCategory grains = ProductCategory.builder()
+                .id(1L)
+                .name("Grains")
+                .description("Rice, Beans, Garri")
+                .enabled(true)
+                .build();
+
+        ProductCategory meat = ProductCategory.builder()
+                .id(2L)
+                .name("Meat")
+                .description("Beef, Goat, Chicken")
+                .enabled(true)
+                .build();
+
+        when(productCategoryRepository.findAll())
+                .thenReturn(List.of(grains, meat));
+
+        List<ProductCategoryResponseDto> response =
+                productCategoryServiceImpl.getAllProductCategories();
+
+        assertThat(response).hasSize(2);
+
+        assertThat(response.get(0).getName()).isEqualTo("Grains");
+        assertThat(response.get(1).getName()).isEqualTo("Meat");
+
+        verify(productCategoryRepository).findAll();
+    }
+
+    @Test
+    @DisplayName("Should update product category successfully")
+    void shouldUpdateProductCategorySuccessfully() {
+
+        ProductCategoryRequestDto requestDto = new ProductCategoryRequestDto();
+        requestDto.setName("Cereals");
+        requestDto.setDescription("Rice, Beans, Maize");
+
+        ProductCategory existingCategory = ProductCategory.builder()
+                .id(1L)
+                .name("Grains")
+                .description("Rice, Beans, Garri")
+                .enabled(true)
+                .build();
+
+        when(productCategoryRepository.findById(1L))
+                .thenReturn(Optional.of(existingCategory));
+
+        when(productCategoryRepository.save(any(ProductCategory.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        ProductCategoryResponseDto response =
+                productCategoryServiceImpl.updateProductCategory(1L, requestDto);
+
+        assertThat(response.getName()).isEqualTo("Cereals");
+        assertThat(response.getDescription())
+                .isEqualTo("Rice, Beans, Maize");
+
+        verify(productCategoryRepository).save(existingCategory);
+    }
+
+
 
 }

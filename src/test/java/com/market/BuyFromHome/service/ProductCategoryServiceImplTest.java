@@ -5,6 +5,7 @@ import com.market.BuyFromHome.dto.responseDto.productCategoryResponse.ProductCat
 import com.market.BuyFromHome.model.ProductCategory;
 import com.market.BuyFromHome.repository.ProductCategoryRepository;
 
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -260,6 +261,62 @@ class ProductCategoryServiceImplTest {
         verify(productCategoryRepository, never()).save(any(ProductCategory.class));
     }
 
+    @Test
+    @DisplayName("Should throw exception when updating to an existing category name")
+    void shouldThrowExceptionWhenUpdatingToAnExistingCategoryName() {
 
+        ProductCategoryRequestDto requestDto = new ProductCategoryRequestDto();
+        requestDto.setName("Meat");
+        requestDto.setDescription("Goat, Beef, Chicken");
 
+        ProductCategory existingCategory = ProductCategory.builder()
+                .id(1L)
+                .name("Grains")
+                .description("Rice, Beans, Garri")
+                .enabled(true)
+                .build();
+
+        when(productCategoryRepository.findById(1L))
+                .thenReturn(Optional.of(existingCategory));
+
+        when(productCategoryRepository.existsByNameIgnoreCase("Meat"))
+                .thenReturn(true);
+
+        assertThatThrownBy(() ->
+                productCategoryServiceImpl.updateProductCategory(1L, requestDto))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Product category already exists");
+
+        verify(productCategoryRepository, never())
+                .save(any(ProductCategory.class));
+    }
+
+    @Test
+    @DisplayName("Should disable product category successfully")
+    void shouldDisableProductCategorySuccessfully() {
+
+        ProductCategory category = ProductCategory.builder()
+                .id(1L)
+                .name("Grains")
+                .description("Rice, Beans, Garri")
+                .enabled(true)
+                .build();
+
+        when(productCategoryRepository.findById(1L))
+                .thenReturn(Optional.of(category));
+
+        when(productCategoryRepository.save(any(ProductCategory.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        ProductCategoryResponseDto response =
+                productCategoryServiceImpl.disableProductCategory(1L);
+
+        assertThat(response.isEnabled()).isFalse();
+
+        verify(productCategoryRepository).save(category);
+    }
 }
+
+
+
+

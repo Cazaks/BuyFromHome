@@ -331,6 +331,31 @@ class ProductCategoryServiceImplTest {
         verify(productCategoryRepository, never())
                 .save(any(ProductCategory.class));
     }
+
+    @Test
+    @DisplayName("Should enable product category successfully")
+    void shouldEnableProductCategorySuccessfully() {
+
+        ProductCategory category = ProductCategory.builder()
+                .id(1L)
+                .name("Grains")
+                .description("Rice, Beans, Garri")
+                .enabled(false)
+                .build();
+
+        when(productCategoryRepository.findById(1L))
+                .thenReturn(Optional.of(category));
+
+        when(productCategoryRepository.save(any(ProductCategory.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        ProductCategoryResponseDto response =
+                productCategoryServiceImpl.enableProductCategory(1L);
+
+        assertThat(response.isEnabled()).isTrue();
+
+        verify(productCategoryRepository).save(category);
+    }
 }
 
 

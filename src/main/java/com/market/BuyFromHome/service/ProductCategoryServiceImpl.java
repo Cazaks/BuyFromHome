@@ -94,5 +94,23 @@ public class ProductCategoryServiceImpl implements ProductCategoryService{
     }
 
 
+    @Transactional
+    @Override
+    public ProductCategoryResponseDto getProductCategoryById(Long id){
+
+        ProductCategory category = productCategoryRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Product category not found")
+                );
+
+        return ProductCategoryResponseDto.builder()
+                .id(category.getId())
+                .name(category.getName())
+                .description(category.getDescription())
+                .enabled(category.isEnabled())
+                .build();
+    }
+
+
 
 }

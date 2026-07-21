@@ -356,6 +356,22 @@ class ProductCategoryServiceImplTest {
 
         verify(productCategoryRepository).save(category);
     }
+
+    @Test
+    @DisplayName("Should throw exception when enabling non-existing product category")
+    void shouldThrowExceptionWhenEnablingNonExistingProductCategory() {
+
+        when(productCategoryRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                productCategoryServiceImpl.enableProductCategory(1L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Product category not found");
+
+        verify(productCategoryRepository, never())
+                .save(any(ProductCategory.class));
+    }
 }
 
 

@@ -240,6 +240,26 @@ class ProductCategoryServiceImplTest {
         verify(productCategoryRepository).save(existingCategory);
     }
 
+    @Test
+    @DisplayName("Should throw exception when updating non-existing product category")
+    void shouldThrowExceptionWhenUpdatingNonExistingProductCategory() {
+
+        ProductCategoryRequestDto requestDto = new ProductCategoryRequestDto();
+        requestDto.setName("Grains");
+        requestDto.setDescription("Rice, Beans, Garri");
+
+        when(productCategoryRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                productCategoryServiceImpl.updateProductCategory(1L, requestDto))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Product category not found");
+
+        verify(productCategoryRepository).findById(1L);
+        verify(productCategoryRepository, never()).save(any(ProductCategory.class));
+    }
+
 
 
 }

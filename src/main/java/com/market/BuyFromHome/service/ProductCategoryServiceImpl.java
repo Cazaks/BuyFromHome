@@ -8,6 +8,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class ProductCategoryServiceImpl implements ProductCategoryService{
@@ -40,5 +42,57 @@ public class ProductCategoryServiceImpl implements ProductCategoryService{
                 .enabled(savedCategory.isEnabled())
                 .build();
     }
+
+    @Transactional
+    @Override
+    public List<ProductCategoryResponseDto> getAllProductCategories() {
+
+        return productCategoryRepository.findAll()
+                .stream()
+                .map(category -> ProductCategoryResponseDto.builder()
+                        .id(category.getId())
+                        .name(category.getName())
+                        .description(category.getDescription())
+                        .enabled(category.isEnabled())
+                        .build())
+                .toList();
+
+    }
+
+
+    @Transactional
+    @Override
+    public ProductCategoryResponseDto updateProductCategory(
+            Long id,
+            ProductCategoryRequestDto requestDto) {
+
+        ProductCategory category = productCategoryRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Product category not found"));
+
+
+        if (!category.getName().equalsIgnoreCase(requestDto.getName())
+                && productCategoryRepository.existsByNameIgnoreCase(requestDto.getName())) {
+
+            throw new RuntimeException(
+                    "Product category already exists: " + requestDto.getName());
+        }
+
+
+        category.setName(requestDto.getName());
+        category.setDescription(requestDto.getDescription());
+
+        ProductCategory updatedCategory =
+                productCategoryRepository.save(category);
+
+        return ProductCategoryResponseDto.builder()
+                .id(updatedCategory.getId())
+                .name(updatedCategory.getName())
+                .description(updatedCategory.getDescription())
+                .enabled(updatedCategory.isEnabled())
+                .build();
+    }
+
+
 
 }

@@ -2,10 +2,10 @@ package com.market.BuyFromHome.service;
 
 import com.market.BuyFromHome.dto.requestDto.productCategoryRequest.ProductCategoryRequestDto;
 import com.market.BuyFromHome.dto.responseDto.productCategoryResponse.ProductCategoryResponseDto;
+import com.market.BuyFromHome.exception.AppException;
 import com.market.BuyFromHome.model.ProductCategory;
 import com.market.BuyFromHome.repository.ProductCategoryRepository;
 
-import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -14,6 +14,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -74,8 +75,10 @@ class ProductCategoryServiceImplTest {
 
         assertThatThrownBy(() ->
                 productCategoryServiceImpl.createProductCategory(requestDto))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Product category already exists");
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Product category already exists")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.CONFLICT);
     }
 
     @Test
@@ -172,8 +175,10 @@ class ProductCategoryServiceImplTest {
 
         assertThatThrownBy(() ->
                 productCategoryServiceImpl.getProductCategoryById(1L))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Product category not found");
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Product category not found")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
 
         verify(productCategoryRepository).findById(1L);
     }
@@ -254,8 +259,10 @@ class ProductCategoryServiceImplTest {
 
         assertThatThrownBy(() ->
                 productCategoryServiceImpl.updateProductCategory(1L, requestDto))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Product category not found");
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Product category not found")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
 
         verify(productCategoryRepository).findById(1L);
         verify(productCategoryRepository, never()).save(any(ProductCategory.class));
@@ -284,8 +291,10 @@ class ProductCategoryServiceImplTest {
 
         assertThatThrownBy(() ->
                 productCategoryServiceImpl.updateProductCategory(1L, requestDto))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Product category already exists");
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Product category already exists")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.CONFLICT);
 
         verify(productCategoryRepository, never())
                 .save(any(ProductCategory.class));
@@ -325,8 +334,10 @@ class ProductCategoryServiceImplTest {
 
         assertThatThrownBy(() ->
                 productCategoryServiceImpl.disableProductCategory(1L))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Product category not found");
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Product category not found")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
 
         verify(productCategoryRepository, never())
                 .save(any(ProductCategory.class));
@@ -366,8 +377,10 @@ class ProductCategoryServiceImplTest {
 
         assertThatThrownBy(() ->
                 productCategoryServiceImpl.enableProductCategory(1L))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Product category not found");
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Product category not found")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
 
         verify(productCategoryRepository, never())
                 .save(any(ProductCategory.class));

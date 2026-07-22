@@ -8,6 +8,7 @@ import com.market.BuyFromHome.dto.requestDto.userRequestDto.UserRegisterRequest;
 import com.market.BuyFromHome.dto.responseDto.userResposeDto.AuthResponseDto;
 import com.market.BuyFromHome.enums.AuthProvider;
 import com.market.BuyFromHome.enums.Role;
+import com.market.BuyFromHome.exception.AppException;
 import com.market.BuyFromHome.model.User;
 import com.market.BuyFromHome.repository.UserRepository;
 import com.market.BuyFromHome.security.JwtUtil;
@@ -18,6 +19,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,8 +56,12 @@ public class AuthenticationServiceImplTest {
     void localRegisterUserSuccessfully() {
 
         UserRegisterRequest registerRequest = new UserRegisterRequest(
-                "Caleb", "Ezak", "caleb@test.com",
-                "password1234", "+2348079921348");
+                "Caleb",
+                "Ezak",
+                "caleb@test.com",
+                "password1234",
+                "+2348079921348"
+        );
 
         when(userRepository.existsByEmail("caleb@test.com"))
                 .thenReturn(false);
@@ -64,7 +70,11 @@ public class AuthenticationServiceImplTest {
                 .thenReturn("hashedPassword");
 
         when(userRepository.save(any(User.class)))
-                .thenAnswer(i -> i.getArgument(0));
+                .thenAnswer(invocation -> {
+                    User user = invocation.getArgument(0);
+                    user.setId(1L);   // Simulate JPA assigning an ID
+                    return user;
+                });
 
         when(jwtUtil.generateToken(anyString(), anyString()))
                 .thenReturn("mock.jwt.token");
@@ -72,6 +82,7 @@ public class AuthenticationServiceImplTest {
         AuthResponseDto responseDto =
                 authenticationServiceImpl.localRegister(registerRequest);
 
+        assertThat(responseDto.getId()).isEqualTo(1L);
         assertThat(responseDto.getFirstName()).isEqualTo("Caleb");
         assertThat(responseDto.getLastName()).isEqualTo("Ezak");
         assertThat(responseDto.getEmail()).isEqualTo("caleb@test.com");
@@ -80,7 +91,6 @@ public class AuthenticationServiceImplTest {
 
         verify(userRepository).save(any(User.class));
     }
-
     @Test
     @DisplayName("Should throw exception when email already exists")
     void throwEmailAlreadyExists() {
@@ -91,9 +101,12 @@ public class AuthenticationServiceImplTest {
         when(userRepository.existsByEmail("caleb@test.com"))
                 .thenReturn(true);
 
-        assertThatThrownBy(() -> authenticationServiceImpl.localRegister(registerRequest))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Email already registered");
+        assertThatThrownBy(() ->
+                authenticationServiceImpl.localRegister(registerRequest))
+                .isInstanceOf(AppException.class)
+                .hasMessage("Email already registered.")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.CONFLICT);
     }
 
 
@@ -322,10 +335,11 @@ public class AuthenticationServiceImplTest {
 
         assertThatThrownBy(() ->
                 authenticationServiceImpl.googleRegister(request))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Email already registered");
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Email already registered")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.CONFLICT);
     }
-
     @Test
     @DisplayName("Should verify Google token")
     void shouldVerifyGoogleToken() {
@@ -461,7 +475,7 @@ public class AuthenticationServiceImplTest {
     @DisplayName("Should throw exception when email does not exist")
     void throwEmailDoesNotExist() {
 
-        UserLoginRequest request = new  UserLoginRequest(
+        UserLoginRequest request = new UserLoginRequest(
                 "caleb@test.com",
                 "password1234"
         );
@@ -471,8 +485,10 @@ public class AuthenticationServiceImplTest {
 
         assertThatThrownBy(() ->
                 authenticationServiceImpl.localLogin(request))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Invalid email or password");
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Invalid email or password")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
     @Test
@@ -497,9 +513,12 @@ public class AuthenticationServiceImplTest {
 
         assertThatThrownBy(() ->
                 authenticationServiceImpl.localLogin(request))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Account is disabled");
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Account is disabled")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.FORBIDDEN);
     }
+
 
     @Test
     @DisplayName("Should throw exception when password is incorrect")
@@ -528,9 +547,12 @@ public class AuthenticationServiceImplTest {
 
         assertThatThrownBy(() ->
                 authenticationServiceImpl.localLogin(request))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Invalid email or password");
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Invalid email or password")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.UNAUTHORIZED);
     }
+
 
     @Test
     @DisplayName("Should throw exception when Google user logs in locally")
@@ -553,8 +575,10 @@ public class AuthenticationServiceImplTest {
 
         assertThatThrownBy(() ->
                 authenticationServiceImpl.localLogin(request))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Please sign in with Google");
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Please sign in with Google")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     // ==========================
@@ -614,13 +638,16 @@ public class AuthenticationServiceImplTest {
                 .thenReturn(payload);
 
         when(userRepository.findByEmail("caleb@test.com"))
-                .thenReturn(java.util.Optional.empty());
+                .thenReturn(Optional.empty());
 
         assertThatThrownBy(() ->
                 authenticationServiceImpl.googleLogin(request))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Google account is not registered");
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Google account is not registered")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
     }
+
 
     @Test
     @DisplayName("Should throw exception when Google account is disabled")
@@ -644,13 +671,16 @@ public class AuthenticationServiceImplTest {
                 .build();
 
         when(userRepository.findByEmail("caleb@test.com"))
-                .thenReturn(java.util.Optional.of(user));
+                .thenReturn(Optional.of(user));
 
         assertThatThrownBy(() ->
                 authenticationServiceImpl.googleLogin(request))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Account is disabled");
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Account is disabled")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.FORBIDDEN);
     }
+
 
     @Test
     @DisplayName("Should verify Google token during login")

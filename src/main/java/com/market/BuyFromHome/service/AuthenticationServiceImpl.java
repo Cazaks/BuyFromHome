@@ -63,17 +63,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
                 savedUser.getRole().name()
         );
 
-        return AuthResponseDto.builder()
-                .id(savedUser.getId())
-                .token(token)
-                .email(savedUser.getEmail())
-                .firstName(savedUser.getFirstName())
-                .lastName(savedUser.getLastName())
-                .phoneNumber(savedUser.getPhoneNumber())
-                .provider(savedUser.getProvider())
-                .role(savedUser.getRole())
-                .enabled(savedUser.isEnabled())
-                .build();
+        return mapToAuthResponse(savedUser, token);
     }
 
     // ==========================
@@ -110,16 +100,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
                 savedUser.getRole().name()
         );
 
-        return AuthResponseDto.builder()
-                .id(savedUser.getId())
-                .token(token)
-                .email(savedUser.getEmail())
-                .firstName(savedUser.getFirstName())
-                .lastName(savedUser.getLastName())
-                .provider(savedUser.getProvider())
-                .role(savedUser.getRole())
-                .enabled(savedUser.isEnabled())
-                .build();
+        return mapToAuthResponse(savedUser, token);
     }
 
     // ==========================
@@ -164,17 +145,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
                 user.getEmail(),
                 user.getRole().name());
 
-        return AuthResponseDto.builder()
-                .id(user.getId())
-                .token(token)
-                .email(user.getEmail())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .phoneNumber(user.getPhoneNumber())
-                .provider(user.getProvider())
-                .role(user.getRole())
-                .enabled(user.isEnabled())
-                .build();
+        return mapToAuthResponse(user, token);
     }
 
     // ==========================
@@ -210,6 +181,12 @@ public class AuthenticationServiceImpl implements AuthenticationService{
         String token = jwtUtil.generateToken(
                 user.getEmail(),
                 user.getRole().name());
+
+        return mapToAuthResponse(user, token);
+    }
+
+
+    private AuthResponseDto mapToAuthResponse(User user, String token) {
 
         return AuthResponseDto.builder()
                 .id(user.getId())

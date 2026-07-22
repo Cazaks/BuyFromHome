@@ -2,10 +2,12 @@ package com.market.BuyFromHome.service;
 
 import com.market.BuyFromHome.dto.requestDto.productCategoryRequest.ProductCategoryRequestDto;
 import com.market.BuyFromHome.dto.responseDto.productCategoryResponse.ProductCategoryResponseDto;
+import com.market.BuyFromHome.exception.AppException;
 import com.market.BuyFromHome.model.ProductCategory;
 import com.market.BuyFromHome.repository.ProductCategoryRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,8 +24,10 @@ public class ProductCategoryServiceImpl implements ProductCategoryService{
             ProductCategoryRequestDto requestDto) {
 
         if (productCategoryRepository.existsByNameIgnoreCase(requestDto.getName())) {
-            throw new RuntimeException(
-                    "Product category already exists: " + requestDto.getName());
+            throw new AppException(
+                    "Product category already exists.",
+                    HttpStatus.CONFLICT
+            );
         }
 
         ProductCategory productCategory = ProductCategory.builder()
@@ -68,16 +72,20 @@ public class ProductCategoryServiceImpl implements ProductCategoryService{
 
         ProductCategory category = productCategoryRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Product category not found"));
-
+                        new AppException(
+                                "Product category not found.",
+                                HttpStatus.NOT_FOUND
+                        )
+                );
 
         if (!category.getName().equalsIgnoreCase(requestDto.getName())
                 && productCategoryRepository.existsByNameIgnoreCase(requestDto.getName())) {
 
-            throw new RuntimeException(
-                    "Product category already exists: " + requestDto.getName());
+            throw new AppException(
+                    "Product category already exists.",
+                    HttpStatus.CONFLICT
+            );
         }
-
 
         category.setName(requestDto.getName());
         category.setDescription(requestDto.getDescription());
@@ -100,7 +108,10 @@ public class ProductCategoryServiceImpl implements ProductCategoryService{
 
         ProductCategory category = productCategoryRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Product category not found")
+                        new AppException(
+                                "Product category not found.",
+                                HttpStatus.NOT_FOUND
+                        )
                 );
 
         return ProductCategoryResponseDto.builder()
@@ -119,7 +130,11 @@ public class ProductCategoryServiceImpl implements ProductCategoryService{
 
         ProductCategory category = productCategoryRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Product category not found"));
+                        new AppException(
+                                "Product category not found.",
+                                HttpStatus.NOT_FOUND
+                        )
+                );
 
         category.setEnabled(false);
 
@@ -139,7 +154,11 @@ public class ProductCategoryServiceImpl implements ProductCategoryService{
 
         ProductCategory category = productCategoryRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Product category not found"));
+                        new AppException(
+                                "Product category not found.",
+                                HttpStatus.NOT_FOUND
+                        )
+                );
 
         category.setEnabled(true);
 

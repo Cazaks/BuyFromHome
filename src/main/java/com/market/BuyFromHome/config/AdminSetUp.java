@@ -6,9 +6,11 @@ import com.market.BuyFromHome.model.User;
 import com.market.BuyFromHome.repository.UserRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class AdminSetUp {
@@ -22,7 +24,7 @@ public class AdminSetUp {
         String adminEmail = "admin@buyfromhome.com";
 
         if (userRepository.existsByEmail(adminEmail)) {
-            System.out.println("Admin already exists.");
+            log.info("Admin account already exists.");
             return;
         }
 
@@ -39,11 +41,10 @@ public class AdminSetUp {
 
         userRepository.save(admin);
 
-        System.out.println("======================================");
-        System.out.println(" Admin account created successfully");
-        System.out.println(" Email: " + adminEmail);
-        System.out.println(" Password: Admin@12345");
-        System.out.println("======================================");
+        log.info("======================================");
+        log.info("Admin account created successfully");
+        log.info("Email: {}", adminEmail);
+        log.info("Default Password: Admin@12345");
+        log.info("======================================");
     }
-
 }

@@ -39,12 +39,7 @@ public class ProductCategoryServiceImpl implements ProductCategoryService{
         ProductCategory savedCategory =
                 productCategoryRepository.save(productCategory);
 
-        return ProductCategoryResponseDto.builder()
-                .id(savedCategory.getId())
-                .name(savedCategory.getName())
-                .description(savedCategory.getDescription())
-                .enabled(savedCategory.isEnabled())
-                .build();
+        return mapToResponse(savedCategory);
     }
 
     @Transactional
@@ -53,14 +48,8 @@ public class ProductCategoryServiceImpl implements ProductCategoryService{
 
         return productCategoryRepository.findAll()
                 .stream()
-                .map(category -> ProductCategoryResponseDto.builder()
-                        .id(category.getId())
-                        .name(category.getName())
-                        .description(category.getDescription())
-                        .enabled(category.isEnabled())
-                        .build())
+                .map(this::mapToResponse)
                 .toList();
-
     }
 
 
@@ -93,12 +82,7 @@ public class ProductCategoryServiceImpl implements ProductCategoryService{
         ProductCategory updatedCategory =
                 productCategoryRepository.save(category);
 
-        return ProductCategoryResponseDto.builder()
-                .id(updatedCategory.getId())
-                .name(updatedCategory.getName())
-                .description(updatedCategory.getDescription())
-                .enabled(updatedCategory.isEnabled())
-                .build();
+        return mapToResponse(updatedCategory);
     }
 
 
@@ -114,12 +98,7 @@ public class ProductCategoryServiceImpl implements ProductCategoryService{
                         )
                 );
 
-        return ProductCategoryResponseDto.builder()
-                .id(category.getId())
-                .name(category.getName())
-                .description(category.getDescription())
-                .enabled(category.isEnabled())
-                .build();
+        return mapToResponse(category);
     }
 
 
@@ -140,12 +119,7 @@ public class ProductCategoryServiceImpl implements ProductCategoryService{
 
         ProductCategory disableCategory = productCategoryRepository.save(category);
 
-        return ProductCategoryResponseDto.builder()
-                .id(disableCategory.getId())
-                .name(disableCategory.getName())
-                .description(disableCategory.getDescription())
-                .enabled(disableCategory.isEnabled())
-                .build();
+        return mapToResponse(disableCategory);
     }
 
     @Transactional
@@ -163,14 +137,19 @@ public class ProductCategoryServiceImpl implements ProductCategoryService{
         category.setEnabled(true);
 
         ProductCategory enableCategory = productCategoryRepository.save(category);
-        return ProductCategoryResponseDto.builder()
-                .id(enableCategory.getId())
-                .name(enableCategory.getName())
-                .description(enableCategory.getDescription())
-                .enabled(enableCategory.isEnabled())
-                .build();
+
+        return mapToResponse(enableCategory);
     }
 
+    private ProductCategoryResponseDto mapToResponse(ProductCategory category) {
+
+        return ProductCategoryResponseDto.builder()
+                .id(category.getId())
+                .name(category.getName())
+                .description(category.getDescription())
+                .enabled(category.isEnabled())
+                .build();
+    }
 
 
 }

@@ -7,9 +7,11 @@ import com.market.BuyFromHome.dto.requestDto.userRequestDto.GoogleAuthRequest;
 import com.market.BuyFromHome.dto.requestDto.userRequestDto.UserLoginRequest;
 import com.market.BuyFromHome.dto.requestDto.userRequestDto.UserRegisterRequest;
 import com.market.BuyFromHome.dto.responseDto.userResposeDto.AuthResponseDto;
+import com.market.BuyFromHome.exception.AppException;
 import com.market.BuyFromHome.model.User;
 import com.market.BuyFromHome.repository.UserRepository;
 import com.market.BuyFromHome.security.JwtUtil;
+import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,8 +39,10 @@ public class AuthenticationServiceImpl implements AuthenticationService{
     public AuthResponseDto localRegister(UserRegisterRequest requestDto) {
 
         if (userRepository.existsByEmail(requestDto.getEmail())) {
-            throw new RuntimeException(
-                    "Email already registered: " + requestDto.getEmail());
+            throw new AppException(
+                    "Email already registered.",
+                    HttpStatus.CONFLICT
+            );
         }
 
         User user = User.builder()
@@ -83,8 +87,10 @@ public class AuthenticationServiceImpl implements AuthenticationService{
                 googleAuthService.verifyToken(requestDto.getIdToken());
 
         if (userRepository.existsByEmail(payload.getEmail())) {
-            throw new RuntimeException(
-                    "Email already registered: " + payload.getEmail());
+            throw new AppException(
+                    "Email already registered.",
+                    HttpStatus.CONFLICT
+            );
         }
 
         User user = User.builder()
@@ -122,23 +128,36 @@ public class AuthenticationServiceImpl implements AuthenticationService{
     @Override
     @Transactional(readOnly = true)
     public AuthResponseDto localLogin(UserLoginRequest requestDto) {
+
         User user = userRepository.findByEmail(requestDto.getEmail())
                 .orElseThrow(() ->
-                        new RuntimeException("Invalid email or password"));
+                        new AppException(
+                                "Invalid email or password.",
+                                HttpStatus.UNAUTHORIZED
+                        ));
 
         if (user.getProvider() == AuthProvider.GOOGLE) {
-            throw new RuntimeException("Please sign in with Google");
+            throw new AppException(
+                    "Please sign in with Google.",
+                    HttpStatus.BAD_REQUEST
+            );
         }
 
         if (!user.isEnabled()) {
-            throw new RuntimeException("Account is disabled");
+            throw new AppException(
+                    "Account is disabled.",
+                    HttpStatus.FORBIDDEN
+            );
         }
 
         if (!passwordEncoder.matches(
                 requestDto.getPassword(),
                 user.getPassword())) {
 
-            throw new RuntimeException("Invalid email or password");
+            throw new AppException(
+                    "Invalid email or password.",
+                    HttpStatus.UNAUTHORIZED
+            );
         }
 
         String token = jwtUtil.generateToken(
@@ -146,10 +165,12 @@ public class AuthenticationServiceImpl implements AuthenticationService{
                 user.getRole().name());
 
         return AuthResponseDto.builder()
+                .id(user.getId())
                 .token(token)
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
+                .phoneNumber(user.getPhoneNumber())
                 .provider(user.getProvider())
                 .role(user.getRole())
                 .enabled(user.isEnabled())
@@ -168,7 +189,10 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 
         User user = userRepository.findByEmail(payload.getEmail())
                 .orElseThrow(() ->
-                        new RuntimeException("Google account is not registered"));
+                        new AppException(
+                                "Google account is not registered.",
+                                HttpStatus.NOT_FOUND
+                        ));
 
         // Link the Google account if this is the first Google login
         if (user.getGoogleId() == null) {
@@ -177,7 +201,10 @@ public class AuthenticationServiceImpl implements AuthenticationService{
         }
 
         if (!user.isEnabled()) {
-            throw new RuntimeException("Account is disabled");
+            throw new AppException(
+                    "Account is disabled.",
+                    HttpStatus.FORBIDDEN
+            );
         }
 
         String token = jwtUtil.generateToken(
@@ -185,10 +212,12 @@ public class AuthenticationServiceImpl implements AuthenticationService{
                 user.getRole().name());
 
         return AuthResponseDto.builder()
+                .id(user.getId())
                 .token(token)
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
+                .phoneNumber(user.getPhoneNumber())
                 .provider(user.getProvider())
                 .role(user.getRole())
                 .enabled(user.isEnabled())

@@ -1,10 +1,14 @@
 package com.market.BuyFromHome.model;
 
 import com.market.BuyFromHome.enums.MeasurementUnit;
+import com.market.BuyFromHome.model.Product;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -12,31 +16,42 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "product_variants")
-public class ProductVariant {
+@Table(name = "product_options")
+public class ProductOption {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String variantName;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
+
+    @Column(length = 100)
+    private String productVariety;
+
+    @Column(length = 100)
+    private String productSpecification;
 
     @Enumerated(EnumType.STRING)
-    private MeasurementUnit unit;
-
     @Column(nullable = false)
+    private MeasurementUnit measurementUnit;
+
+    @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal price;
 
     @Column(nullable = false)
-    private BigDecimal stockQuantity;
+    private Integer quantityInStock;
 
-    private String imageUrl;
-
+    @Builder.Default
+    @Column(nullable = false)
     private boolean enabled = true;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
-    private Product product;
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
+    @UpdateTimestamp
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
 }

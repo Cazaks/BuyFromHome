@@ -14,7 +14,7 @@ public class Address extends BasicEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long addressId;
 
     @Column(nullable = false)
     private String streetAddress;

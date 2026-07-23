@@ -72,7 +72,7 @@ public class AuthenticationServiceImplTest {
         when(userRepository.save(any(User.class)))
                 .thenAnswer(invocation -> {
                     User user = invocation.getArgument(0);
-                    user.setId(1L);   // Simulate JPA assigning an ID
+                    user.setUserId(1L);   // Simulate JPA assigning an ID
                     return user;
                 });
 

@@ -189,7 +189,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
     private AuthResponseDto mapToAuthResponse(User user, String token) {
 
         return AuthResponseDto.builder()
-                .id(user.getId())
+                .id(user.getUserId())
                 .token(token)
                 .email(user.getEmail())
                 .firstName(user.getFirstName())

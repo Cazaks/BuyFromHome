@@ -1,7 +1,6 @@
 package com.market.BuyFromHome.model;
 
 import com.market.BuyFromHome.enums.MeasurementUnit;
-import com.market.BuyFromHome.model.Product;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -21,7 +20,7 @@ public class ProductOption {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long productOptionId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)

@@ -51,8 +51,8 @@ class ProductCategoryServiceImplTest {
         ProductCategoryResponseDto responseDto =
                 productCategoryServiceImpl.createProductCategory(requestDto);
 
-        assertThat(responseDto.getName()).isEqualTo("Grains");
-        assertThat(responseDto.getDescription())
+        assertThat(responseDto.getCategoryName()).isEqualTo("Grains");
+        assertThat(responseDto.getCategoryDescription())
                 .isEqualTo("Rice, Beans, Garri");
 
         verify(productCategoryRepository)
@@ -135,8 +135,8 @@ class ProductCategoryServiceImplTest {
                 productCategoryServiceImpl.createProductCategory(requestDto);
 
         assertThat(response.getId()).isEqualTo(1L);
-        assertThat(response.getName()).isEqualTo("Grains");
-        assertThat(response.getDescription()).isEqualTo("Rice, Beans, Garri");
+        assertThat(response.getCategoryName()).isEqualTo("Grains");
+        assertThat(response.getCategoryDescription()).isEqualTo("Rice, Beans, Garri");
         assertThat(response.isEnabled()).isTrue();
     }
 
@@ -158,8 +158,8 @@ class ProductCategoryServiceImplTest {
                 productCategoryServiceImpl.getProductCategoryById(1L);
 
         assertThat(response.getId()).isEqualTo(1L);
-        assertThat(response.getName()).isEqualTo("Grains");
-        assertThat(response.getDescription())
+        assertThat(response.getCategoryName()).isEqualTo("Grains");
+        assertThat(response.getCategoryDescription())
                 .isEqualTo("Rice, Beans, Garri");
         assertThat(response.isEnabled()).isTrue();
 
@@ -209,8 +209,8 @@ class ProductCategoryServiceImplTest {
 
         assertThat(response).hasSize(2);
 
-        assertThat(response.get(0).getName()).isEqualTo("Grains");
-        assertThat(response.get(1).getName()).isEqualTo("Meat");
+        assertThat(response.get(0).getCategoryName()).isEqualTo("Grains");
+        assertThat(response.get(1).getCategoryName()).isEqualTo("Meat");
 
         verify(productCategoryRepository).findAll();
     }
@@ -239,8 +239,8 @@ class ProductCategoryServiceImplTest {
         ProductCategoryResponseDto response =
                 productCategoryServiceImpl.updateProductCategory(1L, requestDto);
 
-        assertThat(response.getName()).isEqualTo("Cereals");
-        assertThat(response.getDescription())
+        assertThat(response.getCategoryName()).isEqualTo("Cereals");
+        assertThat(response.getCategoryDescription())
                 .isEqualTo("Rice, Beans, Maize");
 
         verify(productCategoryRepository).save(existingCategory);

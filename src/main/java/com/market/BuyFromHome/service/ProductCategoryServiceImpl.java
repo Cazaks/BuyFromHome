@@ -145,8 +145,8 @@ public class ProductCategoryServiceImpl implements ProductCategoryService{
 
         return ProductCategoryResponseDto.builder()
                 .id(category.getId())
-                .name(category.getName())
-                .description(category.getDescription())
+                .categoryName(category.getName())
+                .categoryDescription(category.getDescription())
                 .enabled(category.isEnabled())
                 .build();
     }

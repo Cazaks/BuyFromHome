@@ -9,8 +9,8 @@ import lombok.Setter;
 public class ProductCategoryRequestDto {
 
     @NotBlank(message = "Category name is required")
-    private String name;
+    private String categoryName;
 
     @NotBlank(message = "Product description is required")
-    private String description;
+    private String categoryDescription;
 }

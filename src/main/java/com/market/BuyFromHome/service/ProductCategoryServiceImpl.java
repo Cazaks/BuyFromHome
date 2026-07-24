@@ -23,7 +23,7 @@ public class ProductCategoryServiceImpl implements ProductCategoryService{
     public ProductCategoryResponseDto createProductCategory(
             ProductCategoryRequestDto requestDto) {
 
-        if (productCategoryRepository.existsByNameIgnoreCase(requestDto.getName())) {
+        if (productCategoryRepository.existsByNameIgnoreCase(requestDto.getCategoryName())) {
             throw new AppException(
                     "Product category already exists.",
                     HttpStatus.CONFLICT
@@ -31,8 +31,8 @@ public class ProductCategoryServiceImpl implements ProductCategoryService{
         }
 
         ProductCategory productCategory = ProductCategory.builder()
-                .name(requestDto.getName())
-                .description(requestDto.getDescription())
+                .name(requestDto.getCategoryName())
+                .description(requestDto.getCategoryDescription())
                 .enabled(true)
                 .build();
 
@@ -67,8 +67,8 @@ public class ProductCategoryServiceImpl implements ProductCategoryService{
                         )
                 );
 
-        if (!category.getName().equalsIgnoreCase(requestDto.getName())
-                && productCategoryRepository.existsByNameIgnoreCase(requestDto.getName())) {
+        if (!category.getName().equalsIgnoreCase(requestDto.getCategoryName())
+                && productCategoryRepository.existsByNameIgnoreCase(requestDto.getCategoryName())) {
 
             throw new AppException(
                     "Product category already exists.",
@@ -76,8 +76,8 @@ public class ProductCategoryServiceImpl implements ProductCategoryService{
             );
         }
 
-        category.setName(requestDto.getName());
-        category.setDescription(requestDto.getDescription());
+        category.setName(requestDto.getCategoryName());
+        category.setDescription(requestDto.getCategoryDescription());
 
         ProductCategory updatedCategory =
                 productCategoryRepository.save(category);

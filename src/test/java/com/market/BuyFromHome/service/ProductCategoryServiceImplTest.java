@@ -39,8 +39,8 @@ class ProductCategoryServiceImplTest {
     void createProductCategorySuccessfully() {
 
         ProductCategoryRequestDto requestDto = new ProductCategoryRequestDto();
-        requestDto.setName("Grains");
-        requestDto.setDescription("Rice, Beans, Garri");
+        requestDto.setCategoryName("Grains");
+        requestDto.setCategoryDescription("Rice, Beans, Garri");
 
         when(productCategoryRepository.existsByNameIgnoreCase("Grains"))
                 .thenReturn(false);
@@ -67,8 +67,8 @@ class ProductCategoryServiceImplTest {
         ProductCategoryRequestDto requestDto =
                 new ProductCategoryRequestDto();
 
-        requestDto.setName("Grains");
-        requestDto.setDescription("Rice, Beans, Garri");
+        requestDto.setCategoryName("Grains");
+        requestDto.setCategoryDescription("Rice, Beans, Garri");
 
         when(productCategoryRepository.existsByNameIgnoreCase("Grains"))
                 .thenReturn(true);
@@ -86,8 +86,8 @@ class ProductCategoryServiceImplTest {
     void shouldSaveProductCategoryWithCorrectDetails() {
 
         ProductCategoryRequestDto requestDto = new ProductCategoryRequestDto();
-        requestDto.setName("Grains");
-        requestDto.setDescription("Rice, Beans, Garri");
+        requestDto.setCategoryName("Grains");
+        requestDto.setCategoryDescription("Rice, Beans, Garri");
 
         when(productCategoryRepository.existsByNameIgnoreCase("Grains"))
                 .thenReturn(false);
@@ -115,8 +115,8 @@ class ProductCategoryServiceImplTest {
     void shouldReturnCreatedProductCategory() {
 
         ProductCategoryRequestDto requestDto = new ProductCategoryRequestDto();
-        requestDto.setName("Grains");
-        requestDto.setDescription("Rice, Beans, Garri");
+        requestDto.setCategoryName("Grains");
+        requestDto.setCategoryDescription("Rice, Beans, Garri");
 
         ProductCategory savedCategory = ProductCategory.builder()
                 .id(1L)
@@ -220,8 +220,8 @@ class ProductCategoryServiceImplTest {
     void shouldUpdateProductCategorySuccessfully() {
 
         ProductCategoryRequestDto requestDto = new ProductCategoryRequestDto();
-        requestDto.setName("Cereals");
-        requestDto.setDescription("Rice, Beans, Maize");
+        requestDto.setCategoryName("Cereals");
+        requestDto.setCategoryDescription("Rice, Beans, Maize");
 
         ProductCategory existingCategory = ProductCategory.builder()
                 .id(1L)
@@ -251,8 +251,8 @@ class ProductCategoryServiceImplTest {
     void shouldThrowExceptionWhenUpdatingNonExistingProductCategory() {
 
         ProductCategoryRequestDto requestDto = new ProductCategoryRequestDto();
-        requestDto.setName("Grains");
-        requestDto.setDescription("Rice, Beans, Garri");
+        requestDto.setCategoryName("Grains");
+        requestDto.setCategoryDescription("Rice, Beans, Garri");
 
         when(productCategoryRepository.findById(1L))
                 .thenReturn(Optional.empty());
@@ -273,8 +273,8 @@ class ProductCategoryServiceImplTest {
     void shouldThrowExceptionWhenUpdatingToAnExistingCategoryName() {
 
         ProductCategoryRequestDto requestDto = new ProductCategoryRequestDto();
-        requestDto.setName("Meat");
-        requestDto.setDescription("Goat, Beef, Chicken");
+        requestDto.setCategoryName("Meat");
+        requestDto.setCategoryDescription("Beef, Goat, Chicken");
 
         ProductCategory existingCategory = ProductCategory.builder()
                 .id(1L)

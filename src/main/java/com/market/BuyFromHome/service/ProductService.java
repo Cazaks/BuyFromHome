@@ -7,4 +7,7 @@ import jakarta.transaction.Transactional;
 public interface ProductService {
     @Transactional
     ProductResponseDto createProduct(ProductRequestDto requestDto);
+
+    @Transactional
+    ProductResponseDto getProductById(Long productId);
 }

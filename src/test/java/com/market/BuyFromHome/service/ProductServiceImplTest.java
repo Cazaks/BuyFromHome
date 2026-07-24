@@ -197,4 +197,55 @@ class ProductServiceImplTest {
         assertThat(response.isEnabled()).isTrue();
     }
 
+    @Test
+    @DisplayName("Should return product by id")
+    void shouldReturnProductById() {
+
+        ProductCategory category = ProductCategory.builder()
+                .id(1L)
+                .name("Grains")
+                .build();
+
+        Product product = Product.builder()
+                .productId(1L)
+                .productName("Rice")
+                .productDescription("50kg Bag of Rice")
+                .category(category)
+                .enabled(true)
+                .build();
+
+        when(productRepository.findById(1L))
+                .thenReturn(Optional.of(product));
+
+        ProductResponseDto response =
+                productServiceImpl.getProductById(1L);
+
+        assertThat(response.getProductId()).isEqualTo(1L);
+        assertThat(response.getProductName()).isEqualTo("Rice");
+        assertThat(response.getProductDescription())
+                .isEqualTo("50kg Bag of Rice");
+        assertThat(response.getProductCategoryId()).isEqualTo(1L);
+        assertThat(response.getProductCategoryName()).isEqualTo("Grains");
+        assertThat(response.isEnabled()).isTrue();
+
+        verify(productRepository).findById(1L);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when product is not found")
+    void throwProductNotFound() {
+
+        when(productRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                productServiceImpl.getProductById(1L))
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Product not found")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(productRepository).findById(1L);
+    }
+
 }

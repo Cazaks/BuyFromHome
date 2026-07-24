@@ -88,4 +88,30 @@ class ProductServiceImplTest {
         verify(productRepository, never()).save(any(Product.class));
     }
 
+    @Test
+    @DisplayName("Should throw exception when product category does not exist")
+    void throwProductCategoryNotFound() {
+
+        ProductRequestDto requestDto = new ProductRequestDto();
+
+        requestDto.setProductName("Rice");
+        requestDto.setProductDescription("50kg Bag of Rice");
+        requestDto.setProductCategoryId(1L);
+
+        when(productRepository.existsByProductNameIgnoreCase("Rice"))
+                .thenReturn(false);
+
+        when(productCategoryRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                productServiceImpl.createProduct(requestDto))
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Product category not found")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(productRepository, never()).save(any(Product.class));
+    }
+
 }

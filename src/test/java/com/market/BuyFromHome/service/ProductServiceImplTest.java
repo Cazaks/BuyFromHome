@@ -154,4 +154,47 @@ class ProductServiceImplTest {
         assertThat(savedProduct.isEnabled()).isTrue();
     }
 
+    @Test
+    @DisplayName("Should return created product")
+    void shouldReturnCreatedProduct() {
+
+        ProductRequestDto requestDto = new ProductRequestDto();
+        requestDto.setProductName("Rice");
+        requestDto.setProductDescription("50kg Bag of Rice");
+        requestDto.setProductCategoryId(1L);
+
+        ProductCategory category = ProductCategory.builder()
+                .id(1L)
+                .name("Grains")
+                .build();
+
+        Product savedProduct = Product.builder()
+                .productId(1L)
+                .productName("Rice")
+                .productDescription("50kg Bag of Rice")
+                .category(category)
+                .enabled(true)
+                .build();
+
+        when(productRepository.existsByProductNameIgnoreCase("Rice"))
+                .thenReturn(false);
+
+        when(productCategoryRepository.findById(1L))
+                .thenReturn(Optional.of(category));
+
+        when(productRepository.save(any(Product.class)))
+                .thenReturn(savedProduct);
+
+        ProductResponseDto response =
+                productServiceImpl.createProduct(requestDto);
+
+        assertThat(response.getProductId()).isEqualTo(1L);
+        assertThat(response.getProductName()).isEqualTo("Rice");
+        assertThat(response.getProductDescription())
+                .isEqualTo("50kg Bag of Rice");
+        assertThat(response.getProductCategoryId()).isEqualTo(1L);
+        assertThat(response.getProductCategoryName()).isEqualTo("Grains");
+        assertThat(response.isEnabled()).isTrue();
+    }
+
 }

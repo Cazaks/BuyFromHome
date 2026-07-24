@@ -10,6 +10,7 @@ import com.market.BuyFromHome.repository.ProductRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -112,6 +113,45 @@ class ProductServiceImplTest {
                 .isEqualTo(HttpStatus.NOT_FOUND);
 
         verify(productRepository, never()).save(any(Product.class));
+    }
+
+    @Test
+    @DisplayName("Should save product with correct details")
+    void shouldSaveProductWithCorrectDetails() {
+
+        ProductRequestDto requestDto = new ProductRequestDto();
+        requestDto.setProductName("Rice");
+        requestDto.setProductDescription("50kg Bag of Rice");
+        requestDto.setProductCategoryId(1L);
+
+        ProductCategory category = ProductCategory.builder()
+                .id(1L)
+                .name("Grains")
+                .build();
+
+        when(productRepository.existsByProductNameIgnoreCase("Rice"))
+                .thenReturn(false);
+
+        when(productCategoryRepository.findById(1L))
+                .thenReturn(Optional.of(category));
+
+        when(productRepository.save(any(Product.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        productServiceImpl.createProduct(requestDto);
+
+        ArgumentCaptor<Product> productCaptor =
+                ArgumentCaptor.forClass(Product.class);
+
+        verify(productRepository).save(productCaptor.capture());
+
+        Product savedProduct = productCaptor.getValue();
+
+        assertThat(savedProduct.getProductName()).isEqualTo("Rice");
+        assertThat(savedProduct.getProductDescription())
+                .isEqualTo("50kg Bag of Rice");
+        assertThat(savedProduct.getCategory()).isEqualTo(category);
+        assertThat(savedProduct.isEnabled()).isTrue();
     }
 
 }

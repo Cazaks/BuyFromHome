@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService{
@@ -62,6 +64,16 @@ public class ProductServiceImpl implements ProductService{
                );
 
        return mapToResponse(product);
+    }
+
+    @Transactional
+    @Override
+    public List<ProductResponseDto> getAllProducts(){
+
+        return productRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
 

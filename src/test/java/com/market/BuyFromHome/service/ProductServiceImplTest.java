@@ -21,6 +21,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
@@ -246,6 +248,60 @@ class ProductServiceImplTest {
                 .isEqualTo(HttpStatus.NOT_FOUND);
 
         verify(productRepository).findById(1L);
+    }
+
+    @Test
+    @DisplayName("Should return all products")
+    void shouldReturnAllProducts() {
+
+        ProductCategory category = ProductCategory.builder()
+                .id(1L)
+                .name("Grains")
+                .build();
+
+        Product product1 = Product.builder()
+                .productId(1L)
+                .productName("Rice")
+                .productDescription("50kg Bag of Rice")
+                .category(category)
+                .enabled(true)
+                .build();
+
+        Product product2 = Product.builder()
+                .productId(2L)
+                .productName("Beans")
+                .productDescription("White Beans")
+                .category(category)
+                .enabled(true)
+                .build();
+
+        when(productRepository.findAll())
+                .thenReturn(List.of(product1, product2));
+
+        List<ProductResponseDto> response =
+                productServiceImpl.getAllProducts();
+
+        assertThat(response).hasSize(2);
+
+        assertThat(response.get(0).getProductName()).isEqualTo("Rice");
+        assertThat(response.get(1).getProductName()).isEqualTo("Beans");
+
+        verify(productRepository).findAll();
+    }
+
+    @Test
+    @DisplayName("Should return empty list when no products exist")
+    void shouldReturnEmptyListWhenNoProductsExist() {
+
+        when(productRepository.findAll())
+                .thenReturn(Collections.emptyList());
+
+        List<ProductResponseDto> response =
+                productServiceImpl.getAllProducts();
+
+        assertThat(response).isEmpty();
+
+        verify(productRepository).findAll();
     }
 
 }

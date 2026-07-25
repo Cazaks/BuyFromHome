@@ -82,10 +82,16 @@ public class ProductServiceImpl implements ProductService{
     public ProductResponseDto updateProduct(Long productId, ProductRequestDto requestDto){
 
         Product product = productRepository.findById(productId)
-                .orElseThrow();
+                .orElseThrow(() ->
+                        new AppException(
+                                "Product not found.",
+                                HttpStatus.NOT_FOUND
+                        )
+                );
 
         ProductCategory category = productCategoryRepository.findById(requestDto.getProductCategoryId())
-                .orElseThrow();
+                .orElseThrow(
+                );
 
         product.setProductName(requestDto.getProductName());
         product.setProductDescription(requestDto.getProductDescription());

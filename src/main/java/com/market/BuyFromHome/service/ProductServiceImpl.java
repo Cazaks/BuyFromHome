@@ -77,6 +77,26 @@ public class ProductServiceImpl implements ProductService{
     }
 
 
+    @Transactional
+    @Override
+    public ProductResponseDto updateProduct(Long productId, ProductRequestDto requestDto){
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow();
+
+        ProductCategory category = productCategoryRepository.findById(requestDto.getProductCategoryId())
+                .orElseThrow();
+
+        product.setProductName(requestDto.getProductName());
+        product.setProductDescription(requestDto.getProductDescription());
+        product.setCategory(category);
+
+        Product updatedProduct = productRepository.save(product);
+
+        return mapToResponse(updatedProduct);
+    }
+
+
 
 
     private ProductResponseDto mapToResponse(Product product) {

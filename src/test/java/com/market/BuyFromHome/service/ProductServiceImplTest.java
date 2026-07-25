@@ -304,4 +304,76 @@ class ProductServiceImplTest {
         verify(productRepository).findAll();
     }
 
+    @Test
+    @DisplayName("Should update product successfully")
+    void shouldUpdateProductSuccessfully() {
+
+        ProductRequestDto requestDto = new ProductRequestDto();
+        requestDto.setProductName("Beans");
+        requestDto.setProductDescription("White Beans");
+        requestDto.setProductCategoryId(2L);
+
+        ProductCategory oldCategory = ProductCategory.builder()
+                .id(1L)
+                .name("Grains")
+                .build();
+
+        ProductCategory newCategory = ProductCategory.builder()
+                .id(2L)
+                .name("Food Stuff")
+                .build();
+
+        Product product = Product.builder()
+                .productId(1L)
+                .productName("Rice")
+                .productDescription("50kg Bag of Rice")
+                .category(oldCategory)
+                .enabled(true)
+                .build();
+
+        when(productRepository.findById(1L))
+                .thenReturn(Optional.of(product));
+
+        when(productRepository.existsByProductNameIgnoreCase("Beans"))
+                .thenReturn(false);
+
+        when(productCategoryRepository.findById(2L))
+                .thenReturn(Optional.of(newCategory));
+
+        when(productRepository.save(any(Product.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        ProductResponseDto response =
+                productServiceImpl.updateProduct(1L, requestDto);
+
+        assertThat(response.getProductName()).isEqualTo("Beans");
+        assertThat(response.getProductDescription())
+                .isEqualTo("White Beans");
+        assertThat(response.getProductCategoryId()).isEqualTo(2L);
+
+        verify(productRepository).save(any(Product.class));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when product is not found")
+    void throwProductNotFoundWhenUpdating() {
+
+        ProductRequestDto requestDto = new ProductRequestDto();
+        requestDto.setProductName("Beans");
+        requestDto.setProductDescription("White Beans");
+        requestDto.setProductCategoryId(2L);
+
+        when(productRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                productServiceImpl.updateProduct(1L, requestDto))
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Product not found")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(productRepository, never()).save(any(Product.class));
+    }
+
 }

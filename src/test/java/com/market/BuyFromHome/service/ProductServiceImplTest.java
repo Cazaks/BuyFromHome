@@ -334,7 +334,9 @@ class ProductServiceImplTest {
         when(productRepository.findById(1L))
                 .thenReturn(Optional.of(product));
 
-        when(productRepository.existsByProductNameIgnoreCase("Beans"))
+        when(productRepository.existsByProductNameIgnoreCaseAndProductIdNot(
+                "Beans",
+                1L))
                 .thenReturn(false);
 
         when(productCategoryRepository.findById(2L))
@@ -386,7 +388,7 @@ class ProductServiceImplTest {
         requestDto.setProductCategoryId(2L);
 
         ProductCategory category = ProductCategory.builder()
-                .id(1L)
+                .id(2L)
                 .name("Grains")
                 .build();
 
@@ -398,10 +400,16 @@ class ProductServiceImplTest {
                 .enabled(true)
                 .build();
 
+        when(productCategoryRepository.findById(2L))
+                .thenReturn(Optional.of(category));
+
         when(productRepository.findById(1L))
                 .thenReturn(Optional.of(product));
 
-        when(productRepository.existsByProductNameIgnoreCase("Beans"))
+        when(productRepository
+                .existsByProductNameIgnoreCaseAndProductIdNot(
+                        "Beans",
+                        1L))
                 .thenReturn(true);
 
         assertThatThrownBy(() ->
@@ -413,7 +421,6 @@ class ProductServiceImplTest {
 
         verify(productRepository, never()).save(any(Product.class));
     }
-
     @Test
     @DisplayName("Should allow updating when product name is unchanged")
     void shouldAllowUpdatingWhenProductNameIsUnchanged() {
@@ -473,9 +480,6 @@ class ProductServiceImplTest {
 
         when(productRepository.findById(1L))
                 .thenReturn(Optional.of(product));
-
-        when(productRepository.existsByProductNameIgnoreCaseAndProductIdNot("Beans", 1L))
-                .thenReturn(false);
 
         when(productCategoryRepository.findById(2L))
                 .thenReturn(Optional.empty());

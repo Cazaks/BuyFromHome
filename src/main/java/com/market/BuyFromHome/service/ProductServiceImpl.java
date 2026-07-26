@@ -82,29 +82,22 @@ public class ProductServiceImpl implements ProductService{
     public ProductResponseDto updateProduct(Long productId, ProductRequestDto requestDto){
 
         Product product = productRepository.findById(productId)
-                .orElseThrow(() ->
-                        new AppException(
-                                "Product not found.",
-                                HttpStatus.NOT_FOUND
-                        )
-                );
-
-        if (productRepository.existsByProductNameIgnoreCaseAndProductIdNot(
-                requestDto.getProductName(),
-                productId)) {
-
-            throw new AppException(
-                    "Product already exists.",
-                    HttpStatus.CONFLICT
-            );
-        }
+                .orElseThrow(() -> new AppException(
+                        "Product not found.",
+                        HttpStatus.NOT_FOUND));
 
         ProductCategory category = productCategoryRepository.findById(
                         requestDto.getProductCategoryId())
                 .orElseThrow(() -> new AppException(
                         "Product category not found.",
-                        HttpStatus.NOT_FOUND
-                ));
+                        HttpStatus.NOT_FOUND));
+
+        if (productRepository.existsByProductNameIgnoreCaseAndProductIdNot(
+                requestDto.getProductName(), productId)) {
+            throw new AppException(
+                    "Product already exists.",
+                    HttpStatus.CONFLICT);
+        }
 
         product.setProductName(requestDto.getProductName());
         product.setProductDescription(requestDto.getProductDescription());

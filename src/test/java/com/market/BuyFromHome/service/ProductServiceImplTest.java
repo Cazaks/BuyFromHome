@@ -376,4 +376,42 @@ class ProductServiceImplTest {
         verify(productRepository, never()).save(any(Product.class));
     }
 
+    @Test
+    @DisplayName("Should throw exception when updating to an existing product name")
+    void throwProductAlreadyExistsWhenUpdating() {
+
+        ProductRequestDto requestDto = new ProductRequestDto();
+        requestDto.setProductName("Beans");
+        requestDto.setProductDescription("White Beans");
+        requestDto.setProductCategoryId(2L);
+
+        ProductCategory category = ProductCategory.builder()
+                .id(1L)
+                .name("Grains")
+                .build();
+
+        Product product = Product.builder()
+                .productId(1L)
+                .productName("Rice")
+                .productDescription("50kg Bag of Rice")
+                .category(category)
+                .enabled(true)
+                .build();
+
+        when(productRepository.findById(1L))
+                .thenReturn(Optional.of(product));
+
+        when(productRepository.existsByProductNameIgnoreCase("Beans"))
+                .thenReturn(true);
+
+        assertThatThrownBy(() ->
+                productServiceImpl.updateProduct(1L, requestDto))
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Product already exists")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.CONFLICT);
+
+        verify(productRepository, never()).save(any(Product.class));
+    }
+
 }

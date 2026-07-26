@@ -89,16 +89,22 @@ public class ProductServiceImpl implements ProductService{
                         )
                 );
 
-        if (productRepository.existsByProductNameIgnoreCase(requestDto.getProductName())) {
+        if (productRepository.existsByProductNameIgnoreCaseAndProductIdNot(
+                requestDto.getProductName(),
+                productId)) {
+
             throw new AppException(
                     "Product already exists.",
                     HttpStatus.CONFLICT
             );
         }
 
-        ProductCategory category = productCategoryRepository.findById(requestDto.getProductCategoryId())
-                .orElseThrow(
-                );
+        ProductCategory category = productCategoryRepository.findById(
+                        requestDto.getProductCategoryId())
+                .orElseThrow(() -> new AppException(
+                        "Product category not found.",
+                        HttpStatus.NOT_FOUND
+                ));
 
         product.setProductName(requestDto.getProductName());
         product.setProductDescription(requestDto.getProductDescription());

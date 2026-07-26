@@ -15,4 +15,13 @@ public interface ProductService {
 
     @Transactional
     List<ProductResponseDto> getAllProducts();
+
+    @Transactional
+    ProductResponseDto updateProduct(Long productId, ProductRequestDto requestDto);
+
+    @Transactional
+    ProductResponseDto disableProduct(Long productId);
+
+    @Transactional
+    ProductResponseDto enableProduct(Long productId);
 }

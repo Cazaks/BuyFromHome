@@ -490,4 +490,105 @@ class ProductServiceImplTest {
         verify(productRepository, never()).save(any(Product.class));
     }
 
+    @Test
+    @DisplayName("Should save updated product with correct details")
+    void shouldSaveUpdatedProductWithCorrectDetails() {
+
+        ProductRequestDto requestDto = new ProductRequestDto();
+        requestDto.setProductName("Beans");
+        requestDto.setProductDescription("White Beans");
+        requestDto.setProductCategoryId(2L);
+
+        ProductCategory oldCategory = ProductCategory.builder()
+                .id(1L)
+                .name("Grains")
+                .build();
+
+        ProductCategory newCategory = ProductCategory.builder()
+                .id(2L)
+                .name("Food Stuff")
+                .build();
+
+        Product product = Product.builder()
+                .productId(1L)
+                .productName("Rice")
+                .productDescription("50kg Bag of Rice")
+                .category(oldCategory)
+                .enabled(true)
+                .build();
+
+        when(productRepository.findById(1L))
+                .thenReturn(Optional.of(product));
+
+        when(productRepository.existsByProductNameIgnoreCaseAndProductIdNot("Beans", 1L))
+                .thenReturn(false);
+
+        when(productCategoryRepository.findById(2L))
+                .thenReturn(Optional.of(newCategory));
+
+        when(productRepository.save(any(Product.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        productServiceImpl.updateProduct(1L, requestDto);
+
+        ArgumentCaptor<Product> productCaptor =
+                ArgumentCaptor.forClass(Product.class);
+
+        verify(productRepository).save(productCaptor.capture());
+
+        Product updatedProduct = productCaptor.getValue();
+
+        assertThat(updatedProduct.getProductName()).isEqualTo("Beans");
+        assertThat(updatedProduct.getProductDescription())
+                .isEqualTo("White Beans");
+        assertThat(updatedProduct.getCategory()).isEqualTo(newCategory);
+    }
+
+    @Test
+    @DisplayName("Should disable product successfully")
+    void shouldDisableProductSuccessfully() {
+
+        ProductCategory category = ProductCategory.builder()
+                .id(1L)
+                .name("Grains")
+                .build();
+
+        Product product = Product.builder()
+                .productId(1L)
+                .productName("Rice")
+                .category(category)
+                .enabled(true)
+                .build();
+
+        when(productRepository.findById(1L))
+                .thenReturn(Optional.of(product));
+
+        when(productRepository.save(any(Product.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        ProductResponseDto response =
+                productServiceImpl.disableProduct(1L);
+
+        assertThat(response.isEnabled()).isFalse();
+
+        verify(productRepository).save(product);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when product is not found while disabling")
+    void throwProductNotFoundWhenDisabling() {
+
+        when(productRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                productServiceImpl.disableProduct(1L))
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Product not found")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(productRepository, never()).save(any(Product.class));
+    }
+
 }

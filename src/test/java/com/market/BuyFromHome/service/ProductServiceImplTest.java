@@ -591,4 +591,51 @@ class ProductServiceImplTest {
         verify(productRepository, never()).save(any(Product.class));
     }
 
+    @Test
+    @DisplayName("Should enable product successfully")
+    void shouldEnableProductSuccessfully() {
+
+        ProductCategory category = ProductCategory.builder()
+                .id(1L)
+                .name("Grains")
+                .build();
+
+        Product product = Product.builder()
+                .productId(1L)
+                .productName("Rice")
+                .category(category)
+                .enabled(false)
+                .build();
+
+        when(productRepository.findById(1L))
+                .thenReturn(Optional.of(product));
+
+        when(productRepository.save(any(Product.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        ProductResponseDto response =
+                productServiceImpl.enableProduct(1L);
+
+        assertThat(response.isEnabled()).isTrue();
+
+        verify(productRepository).save(product);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when product is not found while enabling")
+    void throwProductNotFoundWhenEnabling() {
+
+        when(productRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                productServiceImpl.enableProduct(1L))
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Product not found")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(productRepository, never()).save(any(Product.class));
+    }
+
 }

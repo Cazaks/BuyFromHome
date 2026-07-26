@@ -133,6 +133,24 @@ public class ProductServiceImpl implements ProductService{
     }
 
 
+    @Transactional
+    @Override
+    public ProductResponseDto enableProduct(Long productId) {
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new AppException(
+                        "Product not found.",
+                        HttpStatus.NOT_FOUND
+                ));
+
+        product.setEnabled(true);
+
+        Product enabledProduct = productRepository.save(product);
+
+        return mapToResponse(enabledProduct);
+    }
+
+
 
 
     private ProductResponseDto mapToResponse(Product product) {

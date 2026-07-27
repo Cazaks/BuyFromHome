@@ -385,6 +385,97 @@ class ProductOptionServiceImplTest {
     }
 
 
+    @Test
+    @DisplayName("Should get product options by product")
+    void shouldGetProductOptionsByProduct() {
+
+        Product product = buildProduct(1L, "Rice");
+
+        ProductOption option1 = ProductOption.builder()
+                .productOptionId(1L)
+                .product(product)
+                .productVariety("Local Rice")
+                .productSpecification("Short Grain")
+                .enabled(true)
+                .build();
+
+        ProductOption option2 = ProductOption.builder()
+                .productOptionId(2L)
+                .product(product)
+                .productVariety("Foreign Rice")
+                .productSpecification("Long Grain")
+                .enabled(true)
+                .build();
+
+        when(productOptionRepository.findByProduct_ProductIdAndEnabledTrue(1L))
+                .thenReturn(List.of(option1, option2));
+
+        List<ProductOptionResponseDto> response =
+                productOptionServiceImpl.getProductOptionsByProduct(1L);
+
+        assertThat(response).hasSize(2);
+
+        assertThat(response.get(0).getProductOptionId()).isEqualTo(1L);
+        assertThat(response.get(0).getProductName()).isEqualTo("Rice");
+        assertThat(response.get(0).getProductVariety()).isEqualTo("Local Rice");
+        assertThat(response.get(0).getProductSpecification()).isEqualTo("Short Grain");
+
+        assertThat(response.get(1).getProductOptionId()).isEqualTo(2L);
+        assertThat(response.get(1).getProductName()).isEqualTo("Rice");
+        assertThat(response.get(1).getProductVariety()).isEqualTo("Foreign Rice");
+        assertThat(response.get(1).getProductSpecification()).isEqualTo("Long Grain");
+
+        verify(productOptionRepository)
+                .findByProduct_ProductIdAndEnabledTrue(1L);
+    }
+
+    @Test
+    @DisplayName("Should return empty list when product has no product options")
+    void shouldReturnEmptyListWhenProductHasNoProductOptions() {
+
+        Product product = buildProduct(1L, "Rice");
+
+        when(productRepository.findById(1L))
+                .thenReturn(Optional.of(product));
+
+        when(productOptionRepository.findByProduct_ProductIdAndEnabledTrue(1L))
+                .thenReturn(Collections.emptyList());
+
+        List<ProductOptionResponseDto> response =
+                productOptionServiceImpl.getProductOptionsByProduct(1L);
+
+        assertThat(response).isNotNull();
+        assertThat(response).isEmpty();
+
+        verify(productRepository).findById(1L);
+        verify(productOptionRepository)
+                .findByProduct_ProductIdAndEnabledTrue(1L);
+    }
+
+    @Test
+    @DisplayName("Should throw when product does not exist")
+    void shouldThrowWhenGettingProductOptionsForNonExistingProduct() {
+
+        when(productRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> productOptionServiceImpl.getProductOptionsByProduct(1L)
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Product not found.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(productRepository).findById(1L);
+
+        verify(productOptionRepository, never())
+                .findByProduct_ProductIdAndEnabledTrue(anyLong());
+    }
+
     private Product buildProduct(Long productId, String productName) {
 
         return Product.builder()

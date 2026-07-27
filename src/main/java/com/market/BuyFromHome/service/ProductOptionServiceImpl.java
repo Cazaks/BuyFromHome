@@ -79,6 +79,25 @@ public class ProductOptionServiceImpl implements ProductOptionService {
 
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public List<ProductOptionResponseDto> getProductOptionsByProduct(Long productId) {
+
+        productRepository.findById(productId)
+                .orElseThrow(() ->
+                        new AppException(
+                                "Product not found.",
+                                HttpStatus.NOT_FOUND
+                        ));
+
+        return productOptionRepository
+                .findByProduct_ProductIdAndEnabledTrue(productId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+
     private String normalizeSpecification(String specification) {
 
         if (specification == null || specification.isBlank()) {

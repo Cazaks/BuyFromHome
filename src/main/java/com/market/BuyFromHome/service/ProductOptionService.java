@@ -13,4 +13,7 @@ public interface ProductOptionService {
 
     @Transactional(readOnly = true)
     List<ProductOptionResponseDto> getAllProductOptions();
+
+    @Transactional(readOnly = true)
+    List<ProductOptionResponseDto> getProductOptionsByProduct(Long productId);
 }

@@ -5,4 +5,6 @@ import com.market.BuyFromHome.dto.responseDto.productOptionResponse.ProductOptio
 
 public interface ProductOptionService {
     ProductOptionResponseDto createProductOption(ProductOptionRequestDto requestDto);
+
+    ProductOptionResponseDto getProductOptionById(Long productOptionId);
 }

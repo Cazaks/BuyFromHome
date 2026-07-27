@@ -1,13 +1,13 @@
 package com.market.BuyFromHome.model;
 
-import com.market.BuyFromHome.enums.MeasurementUnit;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -26,21 +26,20 @@ public class ProductOption {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    @Column(length = 100)
+    @Column(nullable = false, length = 100)
     private String productVariety;
 
-    @Column(length = 100)
-    private String productSpecification;
+    @Builder.Default
+    @Column(nullable = false, length = 100)
+    private String productSpecification = "";
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private MeasurementUnit measurementUnit;
-
-    @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal price;
-
-    @Column(nullable = false)
-    private Integer quantityInStock;
+    @Builder.Default
+    @OneToMany(
+            mappedBy = "productOption",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<ProductSellingMeasurement> sellingMeasurements = new ArrayList<>();
 
     @Builder.Default
     @Column(nullable = false)

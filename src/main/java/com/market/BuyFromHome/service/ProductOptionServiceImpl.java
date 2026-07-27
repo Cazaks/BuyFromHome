@@ -1,0 +1,95 @@
+package com.market.BuyFromHome.service;
+
+import com.market.BuyFromHome.dto.requestDto.productOptionRequest.ProductOptionRequestDto;
+import com.market.BuyFromHome.dto.responseDto.productOptionResponse.ProductOptionResponseDto;
+import com.market.BuyFromHome.exception.AppException;
+import com.market.BuyFromHome.model.Product;
+import com.market.BuyFromHome.model.ProductOption;
+import com.market.BuyFromHome.repository.ProductOptionRepository;
+import com.market.BuyFromHome.repository.ProductRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class ProductOptionServiceImpl implements ProductOptionService {
+
+    private final ProductRepository productRepository;
+    private final ProductOptionRepository productOptionRepository;
+
+    @Override
+    public ProductOptionResponseDto createProductOption(ProductOptionRequestDto requestDto) {
+
+        Product product = productRepository.findById(requestDto.getProductId())
+                .orElseThrow(() ->
+                        new AppException(
+                                "Product not found.",
+                                HttpStatus.NOT_FOUND
+                        ));
+
+        String specification =
+                normalizeSpecification(requestDto.getProductSpecification());
+
+        validateProductOptionDoesNotExist(
+                product.getProductId(),
+                requestDto.getProductVariety(),
+                specification
+        );
+
+        ProductOption productOption = ProductOption.builder()
+                .product(product)
+                .productVariety(requestDto.getProductVariety())
+                .productSpecification(specification)
+                .build();
+
+        ProductOption savedOption =
+                productOptionRepository.save(productOption);
+
+        return mapToResponse(savedOption);
+    }
+
+    private String normalizeSpecification(String specification) {
+
+        if (specification == null || specification.isBlank()) {
+            return "";
+        }
+
+        return specification.trim();
+    }
+
+    private void validateProductOptionDoesNotExist(
+            Long productId,
+            String productVariety,
+            String productSpecification) {
+
+        boolean exists =
+                productOptionRepository
+                        .existsByProduct_ProductIdAndProductVarietyIgnoreCaseAndProductSpecificationIgnoreCase(
+                                productId,
+                                productVariety,
+                                productSpecification
+                        );
+
+        if (exists) {
+            throw new AppException(
+                    "Product option already exists.",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+    }
+
+    private ProductOptionResponseDto mapToResponse(ProductOption productOption) {
+
+        return ProductOptionResponseDto.builder()
+                .productOptionId(productOption.getProductOptionId())
+                .productId(productOption.getProduct().getProductId())
+                .productName(productOption.getProduct().getProductName())
+                .productVariety(productOption.getProductVariety())
+                .productSpecification(productOption.getProductSpecification())
+                .enabled(productOption.isEnabled())
+                .createdAt(productOption.getCreatedAt())
+                .updatedAt(productOption.getUpdatedAt())
+                .build();
+    }
+}

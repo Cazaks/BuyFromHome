@@ -15,10 +15,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -318,6 +319,69 @@ class ProductOptionServiceImplTest {
                 .isEqualTo(HttpStatus.NOT_FOUND);
 
         verify(productOptionRepository).findById(1L);
+    }
+
+
+    @Test
+    @DisplayName("Should get all product options")
+    void shouldGetAllProductOptions() {
+
+        Product rice = buildProduct(1L, "Rice");
+        Product beans = buildProduct(2L, "Beans");
+
+        ProductOption riceOption = ProductOption.builder()
+                .productOptionId(1L)
+                .product(rice)
+                .productVariety("Local Rice")
+                .productSpecification("Short Grain")
+                .enabled(true)
+                .build();
+
+        ProductOption beansOption = ProductOption.builder()
+                .productOptionId(2L)
+                .product(beans)
+                .productVariety("Honey Beans")
+                .productSpecification("Large Seed")
+                .enabled(true)
+                .build();
+
+        when(productOptionRepository.findAll())
+                .thenReturn(List.of(riceOption, beansOption));
+
+        List<ProductOptionResponseDto> response =
+                productOptionServiceImpl.getAllProductOptions();
+
+        assertThat(response).hasSize(2);
+
+        assertThat(response.getFirst().getProductName())
+                .isEqualTo("Rice");
+
+        assertThat(response.getFirst().getProductVariety())
+                .isEqualTo("Local Rice");
+
+        assertThat(response.get(1).getProductName())
+                .isEqualTo("Beans");
+
+        assertThat(response.get(1).getProductVariety())
+                .isEqualTo("Honey Beans");
+
+        verify(productOptionRepository).findAll();
+    }
+
+    @Test
+    @DisplayName("Should return empty list when no product options exist")
+    void shouldReturnEmptyListWhenNoProductOptionsExist() {
+
+        when(productOptionRepository.findAll())
+                .thenReturn(Collections.emptyList());
+
+        List<ProductOptionResponseDto> response =
+                productOptionServiceImpl.getAllProductOptions();
+
+        assertThat(response).isNotNull();
+        assertThat(response).isEmpty();
+
+        verify(productOptionRepository).findAll();
     }
 
 

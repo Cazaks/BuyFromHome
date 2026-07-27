@@ -7,9 +7,12 @@ import com.market.BuyFromHome.model.Product;
 import com.market.BuyFromHome.model.ProductOption;
 import com.market.BuyFromHome.repository.ProductOptionRepository;
 import com.market.BuyFromHome.repository.ProductRepository;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -18,6 +21,7 @@ public class ProductOptionServiceImpl implements ProductOptionService {
     private final ProductRepository productRepository;
     private final ProductOptionRepository productOptionRepository;
 
+    @Transactional
     @Override
     public ProductOptionResponseDto createProductOption(ProductOptionRequestDto requestDto) {
 
@@ -49,6 +53,7 @@ public class ProductOptionServiceImpl implements ProductOptionService {
         return mapToResponse(savedOption);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public ProductOptionResponseDto getProductOptionById(Long productOptionId) {
 
@@ -61,6 +66,17 @@ public class ProductOptionServiceImpl implements ProductOptionService {
                                 ));
 
         return mapToResponse(productOption);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<ProductOptionResponseDto> getAllProductOptions(){
+
+        return productOptionRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+
     }
 
     private String normalizeSpecification(String specification) {

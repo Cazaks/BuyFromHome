@@ -1,7 +1,10 @@
 package com.market.BuyFromHome.service;
 
 import com.market.BuyFromHome.dto.requestDto.productRequest.ProductRequestDto;
+import com.market.BuyFromHome.dto.responseDto.productOptionResponse.ProductOptionResponseDto;
 import com.market.BuyFromHome.dto.responseDto.productResponse.ProductResponseDto;
+import com.market.BuyFromHome.model.Product;
+import com.market.BuyFromHome.model.ProductOption;
 import jakarta.transaction.Transactional;
 
 import java.util.List;
@@ -25,3 +28,6 @@ public interface ProductService {
     @Transactional
     ProductResponseDto enableProduct(Long productId);
 }
+
+
+

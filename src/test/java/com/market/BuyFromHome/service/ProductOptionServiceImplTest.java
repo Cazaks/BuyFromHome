@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -217,6 +218,106 @@ class ProductOptionServiceImplTest {
 
         verify(productOptionRepository)
                 .save(any(ProductOption.class));
+    }
+
+    @Test
+    @DisplayName("Should trim product specification before saving")
+    void shouldTrimProductSpecificationBeforeSaving() {
+
+        Product product = buildProduct(1L, "Rice");
+
+        ProductOptionRequestDto requestDto =
+                buildRequestDto(
+                        1L,
+                        "Local Rice",
+                        "   Short Grain   "
+                );
+
+        when(productRepository.findById(1L))
+                .thenReturn(Optional.of(product));
+
+        when(productOptionRepository
+                .existsByProduct_ProductIdAndProductVarietyIgnoreCaseAndProductSpecificationIgnoreCase(
+                        1L,
+                        "Local Rice",
+                        "Short Grain"
+                ))
+                .thenReturn(false);
+
+        when(productOptionRepository.save(any(ProductOption.class)))
+                .thenAnswer(invocation -> {
+                    ProductOption option = invocation.getArgument(0);
+                    option.setProductOptionId(1L);
+                    return option;
+                });
+
+        ProductOptionResponseDto response =
+                productOptionServiceImpl.createProductOption(requestDto);
+
+        assertThat(response.getProductSpecification())
+                .isEqualTo("Short Grain");
+
+        verify(productOptionRepository)
+                .existsByProduct_ProductIdAndProductVarietyIgnoreCaseAndProductSpecificationIgnoreCase(
+                        1L,
+                        "Local Rice",
+                        "Short Grain"
+                );
+
+        verify(productOptionRepository)
+                .save(any(ProductOption.class));
+    }
+
+    @Test
+    @DisplayName("Should get product option by id")
+    void shouldGetProductOptionById() {
+
+        Product product = buildProduct(1L, "Rice");
+
+        ProductOption productOption = ProductOption.builder()
+                .productOptionId(1L)
+                .product(product)
+                .productVariety("Local Rice")
+                .productSpecification("Short Grain")
+                .enabled(true)
+                .build();
+
+        when(productOptionRepository.findById(1L))
+                .thenReturn(Optional.of(productOption));
+
+        ProductOptionResponseDto response =
+                productOptionServiceImpl.getProductOptionById(1L);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getProductOptionId()).isEqualTo(1L);
+        assertThat(response.getProductId()).isEqualTo(1L);
+        assertThat(response.getProductName()).isEqualTo("Rice");
+        assertThat(response.getProductVariety()).isEqualTo("Local Rice");
+        assertThat(response.getProductSpecification()).isEqualTo("Short Grain");
+        assertThat(response.isEnabled()).isTrue();
+
+        verify(productOptionRepository).findById(1L);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when product option does not exist")
+    void shouldThrowExceptionWhenProductOptionDoesNotExist() {
+
+        when(productOptionRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> productOptionServiceImpl.getProductOptionById(1L)
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Product option not found.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(productOptionRepository).findById(1L);
     }
 
 

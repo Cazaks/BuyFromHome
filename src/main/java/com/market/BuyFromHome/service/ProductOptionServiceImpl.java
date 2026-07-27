@@ -49,6 +49,20 @@ public class ProductOptionServiceImpl implements ProductOptionService {
         return mapToResponse(savedOption);
     }
 
+    @Override
+    public ProductOptionResponseDto getProductOptionById(Long productOptionId) {
+
+        ProductOption productOption =
+                productOptionRepository.findById(productOptionId)
+                        .orElseThrow(() ->
+                                new AppException(
+                                        "Product option not found.",
+                                        HttpStatus.NOT_FOUND
+                                ));
+
+        return mapToResponse(productOption);
+    }
+
     private String normalizeSpecification(String specification) {
 
         if (specification == null || specification.isBlank()) {

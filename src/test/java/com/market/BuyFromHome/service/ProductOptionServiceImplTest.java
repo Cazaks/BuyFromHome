@@ -407,6 +407,9 @@ class ProductOptionServiceImplTest {
                 .enabled(true)
                 .build();
 
+        when(productRepository.findById(1L))
+                .thenReturn(Optional.of(product));
+
         when(productOptionRepository.findByProduct_ProductIdAndEnabledTrue(1L))
                 .thenReturn(List.of(option1, option2));
 
@@ -425,10 +428,9 @@ class ProductOptionServiceImplTest {
         assertThat(response.get(1).getProductVariety()).isEqualTo("Foreign Rice");
         assertThat(response.get(1).getProductSpecification()).isEqualTo("Long Grain");
 
-        verify(productOptionRepository)
-                .findByProduct_ProductIdAndEnabledTrue(1L);
+        verify(productRepository).findById(1L);
+        verify(productOptionRepository).findByProduct_ProductIdAndEnabledTrue(1L);
     }
-
     @Test
     @DisplayName("Should return empty list when product has no product options")
     void shouldReturnEmptyListWhenProductHasNoProductOptions() {
@@ -453,8 +455,8 @@ class ProductOptionServiceImplTest {
     }
 
     @Test
-    @DisplayName("Should throw when product does not exist")
-    void shouldThrowWhenGettingProductOptionsForNonExistingProduct() {
+    @DisplayName("Should throw exception when product does not exist")
+    void shouldThrowExceptionWhenGettingProductOptionsForNonExistingProduct() {
 
         when(productRepository.findById(1L))
                 .thenReturn(Optional.empty());
@@ -475,6 +477,93 @@ class ProductOptionServiceImplTest {
         verify(productOptionRepository, never())
                 .findByProduct_ProductIdAndEnabledTrue(anyLong());
     }
+    @Test
+    @DisplayName("Should update product option successfully")
+    void shouldUpdateProductOptionSuccessfully() {
+
+        Product product = buildProduct(1L, "Rice");
+
+        ProductOption existingOption = ProductOption.builder()
+                .productOptionId(1L)
+                .product(product)
+                .productVariety("Local Rice")
+                .productSpecification("Short Grain")
+                .enabled(true)
+                .build();
+
+        ProductOptionRequestDto requestDto =
+                buildRequestDto(
+                        1L,
+                        "Foreign Rice",
+                        "Long Grain"
+                );
+
+        when(productOptionRepository.findById(1L))
+                .thenReturn(Optional.of(existingOption));
+
+        when(productOptionRepository
+                .existsByProduct_ProductIdAndProductVarietyIgnoreCaseAndProductSpecificationIgnoreCaseAndProductOptionIdNot(
+                        1L,
+                        "Foreign Rice",
+                        "Long Grain",
+                        1L
+                ))
+                .thenReturn(false);
+
+        when(productOptionRepository.save(any(ProductOption.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        ProductOptionResponseDto response =
+                productOptionServiceImpl.updateProductOption(1L, requestDto);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getProductOptionId()).isEqualTo(1L);
+        assertThat(response.getProductVariety()).isEqualTo("Foreign Rice");
+        assertThat(response.getProductSpecification()).isEqualTo("Long Grain");
+
+        verify(productOptionRepository).findById(1L);
+
+        verify(productOptionRepository)
+                .existsByProduct_ProductIdAndProductVarietyIgnoreCaseAndProductSpecificationIgnoreCaseAndProductOptionIdNot(
+                        1L,
+                        "Foreign Rice",
+                        "Long Grain",
+                        1L
+                );
+
+        verify(productOptionRepository).save(existingOption);
+    }
+
+    @Test
+    @DisplayName("Should throw when product option does not exist")
+    void shouldThrowWhenUpdatingNonExistingProductOption() {
+
+        ProductOptionRequestDto requestDto =
+                buildRequestDto(
+                        1L,
+                        "Foreign Rice",
+                        "Long Grain"
+                );
+
+        when(productOptionRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> productOptionServiceImpl.updateProductOption(1L, requestDto)
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Product option not found.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(productOptionRepository).findById(1L);
+
+        verify(productOptionRepository, never())
+                .save(any(ProductOption.class));
+    }
 
     private Product buildProduct(Long productId, String productName) {
 
@@ -484,6 +573,120 @@ class ProductOptionServiceImplTest {
                 .build();
     }
 
+    @Test
+    @DisplayName("Should throw when updated product option already exists")
+    void shouldThrowWhenUpdatedProductOptionAlreadyExists() {
+
+        Product product = buildProduct(1L, "Rice");
+
+        ProductOption existingOption = ProductOption.builder()
+                .productOptionId(1L)
+                .product(product)
+                .productVariety("Local Rice")
+                .productSpecification("Short Grain")
+                .enabled(true)
+                .build();
+
+        ProductOptionRequestDto requestDto =
+                buildRequestDto(
+                        1L,
+                        "Foreign Rice",
+                        "Long Grain"
+                );
+
+        when(productOptionRepository.findById(1L))
+                .thenReturn(Optional.of(existingOption));
+
+        when(productOptionRepository
+                .existsByProduct_ProductIdAndProductVarietyIgnoreCaseAndProductSpecificationIgnoreCaseAndProductOptionIdNot(
+                        1L,
+                        "Foreign Rice",
+                        "Long Grain",
+                        1L
+                ))
+                .thenReturn(true);
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> productOptionServiceImpl.updateProductOption(1L, requestDto)
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Product option already exists.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        verify(productOptionRepository).findById(1L);
+
+        verify(productOptionRepository)
+                .existsByProduct_ProductIdAndProductVarietyIgnoreCaseAndProductSpecificationIgnoreCaseAndProductOptionIdNot(
+                        1L,
+                        "Foreign Rice",
+                        "Long Grain",
+                        1L
+                );
+
+        verify(productOptionRepository, never())
+                .save(any(ProductOption.class));
+    }
+    @Test
+    @DisplayName("Should update product option successfully when specification is null")
+    void shouldUpdateProductOptionSuccessfullyWhenSpecificationIsNull() {
+
+        Product product = buildProduct(1L, "Garri");
+
+        ProductOption existingOption = ProductOption.builder()
+                .productOptionId(1L)
+                .product(product)
+                .productVariety("Yellow Garri")
+                .productSpecification("")
+                .enabled(true)
+                .build();
+
+        ProductOptionRequestDto requestDto =
+                buildRequestDto(
+                        1L,
+                        "White Garri",
+                        null
+                );
+
+        when(productOptionRepository.findById(1L))
+                .thenReturn(Optional.of(existingOption));
+
+        when(productOptionRepository
+                .existsByProduct_ProductIdAndProductVarietyIgnoreCaseAndProductSpecificationIgnoreCaseAndProductOptionIdNot(
+                        1L,
+                        "White Garri",
+                        "",
+                        1L
+                ))
+                .thenReturn(false);
+
+        when(productOptionRepository.save(any(ProductOption.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        ProductOptionResponseDto response =
+                productOptionServiceImpl.updateProductOption(1L, requestDto);
+
+        assertThat(response.getProductVariety())
+                .isEqualTo("White Garri");
+
+        assertThat(response.getProductSpecification())
+                .isEqualTo("");
+
+        verify(productOptionRepository).findById(1L);
+
+        verify(productOptionRepository)
+                .existsByProduct_ProductIdAndProductVarietyIgnoreCaseAndProductSpecificationIgnoreCaseAndProductOptionIdNot(
+                        1L,
+                        "White Garri",
+                        "",
+                        1L
+                );
+
+        verify(productOptionRepository).save(existingOption);
+    }
     private ProductOptionRequestDto buildRequestDto(
             Long productId,
             String productVariety,

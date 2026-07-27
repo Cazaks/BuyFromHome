@@ -97,6 +97,39 @@ public class ProductOptionServiceImpl implements ProductOptionService {
                 .toList();
     }
 
+    @Transactional
+    @Override
+    public ProductOptionResponseDto updateProductOption(
+            Long productOptionId,
+            ProductOptionRequestDto requestDto) {
+
+        ProductOption productOption =
+                productOptionRepository.findById(productOptionId)
+                        .orElseThrow(() ->
+                                new AppException(
+                                        "Product option not found.",
+                                        HttpStatus.NOT_FOUND
+                                ));
+
+        String specification =
+                normalizeSpecification(requestDto.getProductSpecification());
+
+        validateProductOptionDoesNotExistForUpdate(
+                productOption.getProduct().getProductId(),
+                requestDto.getProductVariety(),
+                specification,
+                productOption.getProductOptionId()
+        );
+
+        productOption.setProductVariety(requestDto.getProductVariety());
+        productOption.setProductSpecification(specification);
+
+        ProductOption updatedOption =
+                productOptionRepository.save(productOption);
+
+        return mapToResponse(updatedOption);
+    }
+
 
     private String normalizeSpecification(String specification) {
 
@@ -118,6 +151,29 @@ public class ProductOptionServiceImpl implements ProductOptionService {
                                 productId,
                                 productVariety,
                                 productSpecification
+                        );
+
+        if (exists) {
+            throw new AppException(
+                    "Product option already exists.",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+    }
+
+    private void validateProductOptionDoesNotExistForUpdate(
+            Long productId,
+            String productVariety,
+            String productSpecification,
+            Long productOptionId) {
+
+        boolean exists =
+                productOptionRepository
+                        .existsByProduct_ProductIdAndProductVarietyIgnoreCaseAndProductSpecificationIgnoreCaseAndProductOptionIdNot(
+                                productId,
+                                productVariety,
+                                productSpecification,
+                                productOptionId
                         );
 
         if (exists) {

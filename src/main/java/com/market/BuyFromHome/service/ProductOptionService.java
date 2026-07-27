@@ -16,4 +16,9 @@ public interface ProductOptionService {
 
     @Transactional(readOnly = true)
     List<ProductOptionResponseDto> getProductOptionsByProduct(Long productId);
+
+    @Transactional
+    ProductOptionResponseDto updateProductOption(
+            Long productOptionId,
+            ProductOptionRequestDto requestDto);
 }

@@ -13,6 +13,12 @@ public interface ProductOptionRepository extends JpaRepository<ProductOption, Lo
             String productSpecification
     );
 
+    boolean existsByProduct_ProductIdAndProductVarietyIgnoreCaseAndProductSpecificationIgnoreCaseAndProductOptionIdNot(
+            Long productId,
+            String productVariety,
+            String productSpecification,
+            Long productOptionId
+    );
 
     List<ProductOption> findByProduct_ProductIdAndEnabledTrue(Long productId);
 }

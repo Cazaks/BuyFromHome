@@ -82,8 +82,8 @@ class ProductOptionServiceImplTest {
     }
 
     @Test
-    @DisplayName("Should throw when product does not exist")
-    void shouldThrowWhenProductDoesNotExist() {
+    @DisplayName("Should throw exception when product does not exist")
+    void shouldThrowExceptionWhenProductDoesNotExist() {
 
         ProductOptionRequestDto requestDto =
                 buildRequestDto(
@@ -121,8 +121,8 @@ class ProductOptionServiceImplTest {
     }
 
     @Test
-    @DisplayName("Should throw when product option already exists")
-    void shouldThrowWhenProductOptionAlreadyExists() {
+    @DisplayName("Should throw exception when product option already exists")
+    void shouldThrowExceptionWhenProductOptionAlreadyExists() {
 
         Product product = buildProduct(1L, "Rice");
 
@@ -762,8 +762,8 @@ class ProductOptionServiceImplTest {
     }
 
     @Test
-    @DisplayName("Should throw when enabling non-existing product option")
-    void shouldThrowWhenEnablingNonExistingProductOption() {
+    @DisplayName("Should throw exception when enabling non-existing product option")
+    void shouldThrowExceptionWhenEnablingNonExistingProductOption() {
 
         when(productOptionRepository.findById(1L))
                 .thenReturn(Optional.empty());

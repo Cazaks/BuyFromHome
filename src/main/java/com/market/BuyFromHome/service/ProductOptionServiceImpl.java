@@ -130,6 +130,23 @@ public class ProductOptionServiceImpl implements ProductOptionService {
         return mapToResponse(updatedOption);
     }
 
+    @Transactional
+    @Override
+    public void disableProductOption(Long productOptionId) {
+
+        ProductOption productOption =
+                productOptionRepository.findById(productOptionId)
+                        .orElseThrow(() ->
+                                new AppException(
+                                        "Product option not found.",
+                                        HttpStatus.NOT_FOUND
+                                ));
+
+        productOption.setEnabled(false);
+
+        productOptionRepository.save(productOption);
+    }
+
 
     private String normalizeSpecification(String specification) {
 

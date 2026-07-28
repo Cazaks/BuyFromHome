@@ -535,8 +535,8 @@ class ProductOptionServiceImplTest {
     }
 
     @Test
-    @DisplayName("Should throw when product option does not exist")
-    void shouldThrowWhenUpdatingNonExistingProductOption() {
+    @DisplayName("Should throw exception when product option does not exist")
+    void shouldThrowExceptionWhenUpdatingNonExistingProductOption() {
 
         ProductOptionRequestDto requestDto =
                 buildRequestDto(
@@ -687,6 +687,55 @@ class ProductOptionServiceImplTest {
 
         verify(productOptionRepository).save(existingOption);
     }
+
+    @Test
+    @DisplayName("Should disable product option successfully")
+    void shouldDisableProductOptionSuccessfully() {
+
+        Product product = buildProduct(1L, "Rice");
+
+        ProductOption productOption = ProductOption.builder()
+                .productOptionId(1L)
+                .product(product)
+                .productVariety("Local Rice")
+                .productSpecification("Short Grain")
+                .enabled(true)
+                .build();
+
+        when(productOptionRepository.findById(1L))
+                .thenReturn(Optional.of(productOption));
+
+        productOptionServiceImpl.disableProductOption(1L);
+
+        assertThat(productOption.isEnabled()).isFalse();
+
+        verify(productOptionRepository).findById(1L);
+        verify(productOptionRepository).save(productOption);
+    }
+
+
+    @Test
+    @DisplayName("Should throw exception when disabling non-existing product option")
+    void shouldThrowExceptionWhenDisablingNonExistingProductOption() {
+
+        when(productOptionRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> productOptionServiceImpl.disableProductOption(1L)
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Product option not found.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(productOptionRepository).findById(1L);
+        verify(productOptionRepository, never()).save(any());
+    }
+
     private ProductOptionRequestDto buildRequestDto(
             Long productId,
             String productVariety,

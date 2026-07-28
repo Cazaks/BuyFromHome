@@ -21,4 +21,7 @@ public interface ProductOptionService {
     ProductOptionResponseDto updateProductOption(
             Long productOptionId,
             ProductOptionRequestDto requestDto);
+
+    @Transactional
+    void disableProductOption(Long productOptionId);
 }

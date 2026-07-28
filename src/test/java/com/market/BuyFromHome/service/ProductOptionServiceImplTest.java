@@ -736,6 +736,53 @@ class ProductOptionServiceImplTest {
         verify(productOptionRepository, never()).save(any());
     }
 
+    @Test
+    @DisplayName("Should enable product option successfully")
+    void shouldEnableProductOptionSuccessfully() {
+
+        Product product = buildProduct(1L, "Rice");
+
+        ProductOption productOption = ProductOption.builder()
+                .productOptionId(1L)
+                .product(product)
+                .productVariety("Local Rice")
+                .productSpecification("Short Grain")
+                .enabled(false)
+                .build();
+
+        when(productOptionRepository.findById(1L))
+                .thenReturn(Optional.of(productOption));
+
+        productOptionServiceImpl.enableProductOption(1L);
+
+        assertThat(productOption.isEnabled()).isTrue();
+
+        verify(productOptionRepository).findById(1L);
+        verify(productOptionRepository).save(productOption);
+    }
+
+    @Test
+    @DisplayName("Should throw when enabling non-existing product option")
+    void shouldThrowWhenEnablingNonExistingProductOption() {
+
+        when(productOptionRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> productOptionServiceImpl.enableProductOption(1L)
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Product option not found.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(productOptionRepository).findById(1L);
+        verify(productOptionRepository, never()).save(any());
+    }
+
     private ProductOptionRequestDto buildRequestDto(
             Long productId,
             String productVariety,

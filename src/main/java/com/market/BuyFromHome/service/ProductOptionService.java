@@ -24,4 +24,7 @@ public interface ProductOptionService {
 
     @Transactional
     void disableProductOption(Long productOptionId);
+
+    @Transactional
+    void enableProductOption(Long productOptionId);
 }

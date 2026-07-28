@@ -148,6 +148,24 @@ public class ProductOptionServiceImpl implements ProductOptionService {
     }
 
 
+    @Transactional
+    @Override
+    public void enableProductOption(Long productOptionId) {
+
+        ProductOption productOption =
+                productOptionRepository.findById(productOptionId)
+                        .orElseThrow(() ->
+                                new AppException(
+                                        "Product option not found.",
+                                        HttpStatus.NOT_FOUND
+                                ));
+
+        productOption.setEnabled(true);
+
+        productOptionRepository.save(productOption);
+    }
+
+
     private String normalizeSpecification(String specification) {
 
         if (specification == null || specification.isBlank()) {

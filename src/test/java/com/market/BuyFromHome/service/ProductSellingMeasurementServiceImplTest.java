@@ -515,6 +515,73 @@ class ProductSellingMeasurementServiceImplTest {
                 .save(any(ProductSellingMeasurement.class));
     }
 
+    @Test
+    @DisplayName("Should disable selling measurement successfully")
+    void shouldDisableSellingMeasurementSuccessfully() {
+
+        ProductOption productOption = buildProductOption();
+
+        ProductSellingMeasurement measurement =
+                ProductSellingMeasurement.builder()
+                        .sellingMeasurementId(1L)
+                        .productOption(productOption)
+                        .measurementUnit(MeasurementUnit.DERICA)
+                        .sellingPrice(new BigDecimal("2500.00"))
+                        .quantityInStock(20)
+                        .enabled(true)
+                        .build();
+
+        when(productSellingMeasurementRepository.findById(1L))
+                .thenReturn(Optional.of(measurement));
+
+        when(productSellingMeasurementRepository.save(
+                any(ProductSellingMeasurement.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        ProductSellingMeasurementResponseDto response =
+                productSellingMeasurementServiceImpl
+                        .disableSellingMeasurement(1L);
+
+        assertThat(response).isNotNull();
+
+        assertThat(response.getSellingMeasurementId())
+                .isEqualTo(1L);
+
+        assertThat(response.isEnabled())
+                .isFalse();
+
+        verify(productSellingMeasurementRepository)
+                .findById(1L);
+
+        verify(productSellingMeasurementRepository)
+                .save(measurement);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when disabling non-existing selling measurement")
+    void shouldThrowExceptionWhenDisablingNonExistingSellingMeasurement() {
+
+        when(productSellingMeasurementRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> productSellingMeasurementServiceImpl
+                        .disableSellingMeasurement(1L)
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Selling measurement not found.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(productSellingMeasurementRepository)
+                .findById(1L);
+
+        verify(productSellingMeasurementRepository, never())
+                .save(any(ProductSellingMeasurement.class));
+    }
 
     private ProductOption buildProductOption() {
 

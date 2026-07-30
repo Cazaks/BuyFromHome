@@ -152,6 +152,28 @@ public class ProductSellingMeasurementServiceImpl implements ProductSellingMeasu
         return mapToResponse(updatedMeasurement);
     }
 
+    @Transactional
+    @Override
+    public ProductSellingMeasurementResponseDto disableSellingMeasurement(
+            Long sellingMeasurementId) {
+
+        ProductSellingMeasurement measurement =
+                productSellingMeasurementRepository
+                        .findById(sellingMeasurementId)
+                        .orElseThrow(() ->
+                                new AppException(
+                                        "Selling measurement not found.",
+                                        HttpStatus.NOT_FOUND
+                                ));
+
+        measurement.setEnabled(false);
+
+        ProductSellingMeasurement disabledMeasurement =
+                productSellingMeasurementRepository.save(measurement);
+
+        return mapToResponse(disabledMeasurement);
+    }
+
     private ProductSellingMeasurementResponseDto mapToResponse(
             ProductSellingMeasurement measurement){
 

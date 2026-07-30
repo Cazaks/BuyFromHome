@@ -26,4 +26,8 @@ public interface ProductSellingMeasurementService{
     ProductSellingMeasurementResponseDto updateSellingMeasurement(
             Long sellingMeasurementId,
             ProductSellingMeasurementRequestDto requestDto);
+
+    @Transactional
+    ProductSellingMeasurementResponseDto disableSellingMeasurement(
+            Long sellingMeasurementId);
 }

@@ -280,7 +280,7 @@ class ProductSellingMeasurementServiceImplTest {
 
         assertThat(response).hasSize(2);
 
-        assertThat(response.get(0).getSellingMeasurementId())
+        assertThat(response.getFirst().getSellingMeasurementId())
                 .isEqualTo(1L);
 
         assertThat(response.get(0).getProductName())
@@ -336,7 +336,7 @@ class ProductSellingMeasurementServiceImplTest {
 
         assertThat(response).hasSize(2);
 
-        assertThat(response.get(0).getSellingMeasurementId())
+        assertThat(response.getFirst().getSellingMeasurementId())
                 .isEqualTo(1L);
 
         assertThat(response.get(0).getProductName())
@@ -355,9 +355,168 @@ class ProductSellingMeasurementServiceImplTest {
                 .findByProductOption_ProductOptionIdAndEnabledTrue(1L);
     }
 
+    @Test
+    @DisplayName("Should update selling measurement successfully")
+    void shouldUpdateSellingMeasurementSuccessfully() {
+
+        ProductOption productOption = buildProductOption();
+
+        ProductSellingMeasurement existingMeasurement =
+                ProductSellingMeasurement.builder()
+                        .sellingMeasurementId(1L)
+                        .productOption(productOption)
+                        .measurementUnit(MeasurementUnit.DERICA)
+                        .sellingPrice(new BigDecimal("2500.00"))
+                        .quantityInStock(20)
+                        .enabled(true)
+                        .build();
+
+        ProductSellingMeasurementRequestDto requestDto =
+                buildRequestDto(
+                        1L,
+                        MeasurementUnit.BAG,
+                        new BigDecimal("95000.00"),
+                        10
+                );
+
+        when(productSellingMeasurementRepository.findById(1L))
+                .thenReturn(Optional.of(existingMeasurement));
+
+        when(productSellingMeasurementRepository
+                .existsByProductOption_ProductOptionIdAndMeasurementUnit(
+                        1L,
+                        MeasurementUnit.BAG
+                ))
+                .thenReturn(false);
+
+        when(productSellingMeasurementRepository.save(any(
+                ProductSellingMeasurement.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        ProductSellingMeasurementResponseDto response =
+                productSellingMeasurementServiceImpl
+                        .updateSellingMeasurement(1L, requestDto);
+
+        assertThat(response.getSellingMeasurementId())
+                .isEqualTo(1L);
+
+        assertThat(response.getMeasurementUnit())
+                .isEqualTo(MeasurementUnit.BAG);
+
+        assertThat(response.getSellingPrice())
+                .isEqualByComparingTo("95000.00");
+
+        assertThat(response.getQuantityInStock())
+                .isEqualTo(10);
+
+        assertThat(response.isEnabled())
+                .isTrue();
+
+        verify(productSellingMeasurementRepository)
+                .save(existingMeasurement);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when updating non-existing selling measurement")
+    void shouldThrowExceptionWhenUpdatingNonExistingSellingMeasurement() {
+
+        ProductSellingMeasurementRequestDto requestDto =
+                buildRequestDto(
+                        1L,
+                        MeasurementUnit.BAG,
+                        new BigDecimal("95000.00"),
+                        10
+                );
+
+        when(productSellingMeasurementRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> productSellingMeasurementServiceImpl
+                        .updateSellingMeasurement(1L, requestDto)
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Selling measurement not found.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(productSellingMeasurementRepository)
+                .findById(1L);
+
+        verify(productSellingMeasurementRepository, never())
+                .existsByProductOption_ProductOptionIdAndMeasurementUnit(
+                        anyLong(),
+                        any()
+                );
+
+        verify(productSellingMeasurementRepository, never())
+                .save(any(ProductSellingMeasurement.class));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when updating to an existing measurement unit")
+    void shouldThrowExceptionWhenUpdatingToAnExistingMeasurementUnit() {
+
+        ProductOption productOption = buildProductOption();
+
+        ProductSellingMeasurement existingMeasurement =
+                ProductSellingMeasurement.builder()
+                        .sellingMeasurementId(1L)
+                        .productOption(productOption)
+                        .measurementUnit(MeasurementUnit.DERICA)
+                        .sellingPrice(new BigDecimal("2500.00"))
+                        .quantityInStock(20)
+                        .enabled(true)
+                        .build();
+
+        ProductSellingMeasurementRequestDto requestDto =
+                buildRequestDto(
+                        1L,
+                        MeasurementUnit.BAG,
+                        new BigDecimal("95000.00"),
+                        10
+                );
+
+        when(productSellingMeasurementRepository.findById(1L))
+                .thenReturn(Optional.of(existingMeasurement));
+
+        when(productSellingMeasurementRepository
+                .existsByProductOption_ProductOptionIdAndMeasurementUnit(
+                        1L,
+                        MeasurementUnit.BAG
+                ))
+                .thenReturn(true);
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> productSellingMeasurementServiceImpl
+                        .updateSellingMeasurement(1L, requestDto)
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Selling measurement already exists.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        verify(productSellingMeasurementRepository)
+                .findById(1L);
+
+        verify(productSellingMeasurementRepository)
+                .existsByProductOption_ProductOptionIdAndMeasurementUnit(
+                        1L,
+                        MeasurementUnit.BAG
+                );
+
+        verify(productSellingMeasurementRepository, never())
+                .save(any(ProductSellingMeasurement.class));
+    }
+
 
     private ProductOption buildProductOption() {
-
 
         Product product = Product.builder()
                 .productId(1L)
@@ -372,7 +531,6 @@ class ProductSellingMeasurementServiceImplTest {
                 .build();
     }
 
-
     private ProductSellingMeasurementRequestDto buildRequestDto() {
 
         ProductSellingMeasurementRequestDto dto =
@@ -382,6 +540,23 @@ class ProductSellingMeasurementServiceImplTest {
         dto.setMeasurementUnit(MeasurementUnit.DERICA);
         dto.setSellingPrice(new BigDecimal("2500.00"));
         dto.setQuantityInStock(20);
+
+        return dto;
+    }
+
+    private ProductSellingMeasurementRequestDto buildRequestDto(
+            Long productOptionId,
+            MeasurementUnit measurementUnit,
+            BigDecimal sellingPrice,
+            Integer quantityInStock) {
+
+        ProductSellingMeasurementRequestDto dto =
+                new ProductSellingMeasurementRequestDto();
+
+        dto.setProductOptionId(productOptionId);
+        dto.setMeasurementUnit(measurementUnit);
+        dto.setSellingPrice(sellingPrice);
+        dto.setQuantityInStock(quantityInStock);
 
         return dto;
     }

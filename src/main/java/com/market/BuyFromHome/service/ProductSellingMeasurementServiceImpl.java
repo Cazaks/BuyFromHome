@@ -101,6 +101,57 @@ public class ProductSellingMeasurementServiceImpl implements ProductSellingMeasu
                 .toList();
     }
 
+    @Transactional
+    @Override
+    public ProductSellingMeasurementResponseDto updateSellingMeasurement(
+            Long sellingMeasurementId,
+            ProductSellingMeasurementRequestDto requestDto) {
+
+        ProductSellingMeasurement measurement =
+                productSellingMeasurementRepository
+                        .findById(sellingMeasurementId)
+                        .orElseThrow(() ->
+                                new AppException(
+                                        "Selling measurement not found.",
+                                        HttpStatus.NOT_FOUND
+                                ));
+
+        boolean exists =
+                productSellingMeasurementRepository
+                        .existsByProductOption_ProductOptionIdAndMeasurementUnit(
+                                measurement.getProductOption().getProductOptionId(),
+                                requestDto.getMeasurementUnit()
+                        );
+
+        if (exists &&
+                !measurement.getMeasurementUnit()
+                        .equals(requestDto.getMeasurementUnit())) {
+
+            throw new AppException(
+                    "Selling measurement already exists.",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        measurement.setMeasurementUnit(
+                requestDto.getMeasurementUnit()
+        );
+
+        measurement.setSellingPrice(
+                requestDto.getSellingPrice()
+        );
+
+        measurement.setQuantityInStock(
+                requestDto.getQuantityInStock()
+        );
+
+        ProductSellingMeasurement updatedMeasurement =
+                productSellingMeasurementRepository
+                        .save(measurement);
+
+        return mapToResponse(updatedMeasurement);
+    }
+
     private ProductSellingMeasurementResponseDto mapToResponse(
             ProductSellingMeasurement measurement){
 

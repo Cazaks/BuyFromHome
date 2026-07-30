@@ -7,7 +7,7 @@ import com.market.BuyFromHome.model.ProductOption;
 import com.market.BuyFromHome.model.ProductSellingMeasurement;
 import com.market.BuyFromHome.repository.ProductOptionRepository;
 import com.market.BuyFromHome.repository.ProductSellingMeasurementRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -58,7 +58,23 @@ public class ProductSellingMeasurementServiceImpl implements ProductSellingMeasu
 
         return mapToResponse(savedMeasurement);
 
+    }
 
+    @Transactional(readOnly = true)
+    @Override
+    public ProductSellingMeasurementResponseDto getSellingMeasurementById(
+            Long sellingMeasurementId) {
+
+        ProductSellingMeasurement measurement =
+                productSellingMeasurementRepository
+                        .findById(sellingMeasurementId)
+                        .orElseThrow(() ->
+                                new AppException(
+                                        "Selling measurement not found.",
+                                        HttpStatus.NOT_FOUND
+                                ));
+
+        return mapToResponse(measurement);
     }
 
     private ProductSellingMeasurementResponseDto mapToResponse(

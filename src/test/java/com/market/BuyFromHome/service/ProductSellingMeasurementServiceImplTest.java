@@ -124,8 +124,8 @@ class ProductSellingMeasurementServiceImplTest {
     }
 
     @Test
-    @DisplayName("Should throw when selling measurement already exists")
-    void shouldThrowWhenSellingMeasurementAlreadyExists() {
+    @DisplayName("Should throw exception when selling measurement already exists")
+    void shouldThrowExceptionWhenSellingMeasurementAlreadyExists() {
 
         ProductOption productOption = buildProductOption();
 
@@ -166,6 +166,81 @@ class ProductSellingMeasurementServiceImplTest {
                 .save(any(ProductSellingMeasurement.class));
     }
 
+    @Test
+    @DisplayName("Should get selling measurement by id")
+    void shouldGetSellingMeasurementById() {
+
+        ProductOption productOption = buildProductOption();
+
+        ProductSellingMeasurement measurement =
+                ProductSellingMeasurement.builder()
+                        .sellingMeasurementId(1L)
+                        .productOption(productOption)
+                        .measurementUnit(MeasurementUnit.DERICA)
+                        .sellingPrice(new BigDecimal("2500.00"))
+                        .quantityInStock(20)
+                        .enabled(true)
+                        .build();
+
+        when(productSellingMeasurementRepository.findById(1L))
+                .thenReturn(Optional.of(measurement));
+
+        ProductSellingMeasurementResponseDto response =
+                productSellingMeasurementServiceImpl
+                        .getSellingMeasurementById(1L);
+
+        assertThat(response).isNotNull();
+
+        assertThat(response.getSellingMeasurementId())
+                .isEqualTo(1L);
+
+        assertThat(response.getProductOptionId())
+                .isEqualTo(1L);
+
+        assertThat(response.getProductName())
+                .isEqualTo("Rice");
+
+        assertThat(response.getProductVariety())
+                .isEqualTo("Local Rice");
+
+        assertThat(response.getProductSpecification())
+                .isEqualTo("Short Grain");
+
+        assertThat(response.getMeasurementUnit())
+                .isEqualTo(MeasurementUnit.DERICA);
+
+        assertThat(response.getSellingPrice())
+                .isEqualByComparingTo("2500.00");
+
+        assertThat(response.getQuantityInStock())
+                .isEqualTo(20);
+
+        assertThat(response.isEnabled())
+                .isTrue();
+    }
+
+    @Test
+    @DisplayName("Should throw when selling measurement does not exist")
+    void shouldThrowWhenSellingMeasurementDoesNotExist() {
+
+        when(productSellingMeasurementRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> productSellingMeasurementServiceImpl
+                        .getSellingMeasurementById(1L)
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Selling measurement not found.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(productSellingMeasurementRepository)
+                .findById(1L);
+    }
     private ProductOption buildProductOption() {
 
 

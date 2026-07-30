@@ -132,7 +132,7 @@ public class ProductOptionServiceImpl implements ProductOptionService {
 
     @Transactional
     @Override
-    public void disableProductOption(Long productOptionId) {
+    public ProductOptionResponseDto disableProductOption(Long productOptionId) {
 
         ProductOption productOption =
                 productOptionRepository.findById(productOptionId)
@@ -144,13 +144,15 @@ public class ProductOptionServiceImpl implements ProductOptionService {
 
         productOption.setEnabled(false);
 
-        productOptionRepository.save(productOption);
+        ProductOption disapleProductOption = productOptionRepository.save(productOption);
+
+        return mapToResponse(disapleProductOption);
     }
 
 
     @Transactional
     @Override
-    public void enableProductOption(Long productOptionId) {
+    public ProductOptionResponseDto enableProductOption(Long productOptionId) {
 
         ProductOption productOption =
                 productOptionRepository.findById(productOptionId)
@@ -162,7 +164,9 @@ public class ProductOptionServiceImpl implements ProductOptionService {
 
         productOption.setEnabled(true);
 
-        productOptionRepository.save(productOption);
+        ProductOption enableProductOption = productOptionRepository.save(productOption);
+
+        return mapToResponse(enableProductOption);
     }
 
 

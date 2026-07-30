@@ -23,8 +23,8 @@ public interface ProductOptionService {
             ProductOptionRequestDto requestDto);
 
     @Transactional
-    void disableProductOption(Long productOptionId);
+    ProductOptionResponseDto disableProductOption(Long productOptionId);
 
     @Transactional
-    void enableProductOption(Long productOptionId);
+    ProductOptionResponseDto enableProductOption(Long productOptionId);
 }

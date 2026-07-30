@@ -30,4 +30,8 @@ public interface ProductSellingMeasurementService{
     @Transactional
     ProductSellingMeasurementResponseDto disableSellingMeasurement(
             Long sellingMeasurementId);
+
+    @Transactional
+    ProductSellingMeasurementResponseDto enableSellingMeasurement(
+            Long sellingMeasurementId);
 }

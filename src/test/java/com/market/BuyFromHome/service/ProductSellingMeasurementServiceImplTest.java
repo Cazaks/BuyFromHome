@@ -18,13 +18,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ProductSellingMeasurementServiceImplTest {
 
@@ -240,6 +243,60 @@ class ProductSellingMeasurementServiceImplTest {
 
         verify(productSellingMeasurementRepository)
                 .findById(1L);
+    }
+
+    @Test
+    @DisplayName("Should get all selling measurements")
+    void shouldGetAllSellingMeasurements() {
+
+        ProductOption productOption = buildProductOption();
+
+        ProductSellingMeasurement firstMeasurement =
+                ProductSellingMeasurement.builder()
+                        .sellingMeasurementId(1L)
+                        .productOption(productOption)
+                        .measurementUnit(MeasurementUnit.DERICA)
+                        .sellingPrice(new BigDecimal("2500.00"))
+                        .quantityInStock(20)
+                        .enabled(true)
+                        .build();
+
+        ProductSellingMeasurement secondMeasurement =
+                ProductSellingMeasurement.builder()
+                        .sellingMeasurementId(2L)
+                        .productOption(productOption)
+                        .measurementUnit(MeasurementUnit.BAG)
+                        .sellingPrice(new BigDecimal("95000.00"))
+                        .quantityInStock(10)
+                        .enabled(true)
+                        .build();
+
+        when(productSellingMeasurementRepository.findAll())
+                .thenReturn(List.of(firstMeasurement, secondMeasurement));
+
+        List<ProductSellingMeasurementResponseDto> response =
+                productSellingMeasurementServiceImpl
+                        .getAllSellingMeasurements();
+
+        assertThat(response).hasSize(2);
+
+        assertThat(response.get(0).getSellingMeasurementId())
+                .isEqualTo(1L);
+
+        assertThat(response.get(0).getProductName())
+                .isEqualTo("Rice");
+
+        assertThat(response.get(0).getMeasurementUnit())
+                .isEqualTo(MeasurementUnit.DERICA);
+
+        assertThat(response.get(1).getSellingMeasurementId())
+                .isEqualTo(2L);
+
+        assertThat(response.get(1).getMeasurementUnit())
+                .isEqualTo(MeasurementUnit.BAG);
+
+        verify(productSellingMeasurementRepository)
+                .findAll();
     }
     private ProductOption buildProductOption() {
 

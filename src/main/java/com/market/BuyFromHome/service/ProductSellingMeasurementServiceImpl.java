@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class ProductSellingMeasurementServiceImpl implements ProductSellingMeasurementService{
@@ -75,6 +77,16 @@ public class ProductSellingMeasurementServiceImpl implements ProductSellingMeasu
                                 ));
 
         return mapToResponse(measurement);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<ProductSellingMeasurementResponseDto> getAllSellingMeasurements() {
+
+        return productSellingMeasurementRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     private ProductSellingMeasurementResponseDto mapToResponse(

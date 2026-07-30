@@ -4,6 +4,8 @@ import com.market.BuyFromHome.dto.requestDto.productSellingRequest.ProductSellin
 import com.market.BuyFromHome.dto.responseDto.productSellingResponse.ProductSellingMeasurementResponseDto;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 public interface ProductSellingMeasurementService{
     @Transactional
     ProductSellingMeasurementResponseDto createSellingMeasurement(
@@ -12,4 +14,7 @@ public interface ProductSellingMeasurementService{
     @Transactional(readOnly = true)
     ProductSellingMeasurementResponseDto getSellingMeasurementById(
             Long sellingMeasurementId);
+
+    @Transactional(readOnly = true)
+    List<ProductSellingMeasurementResponseDto> getAllSellingMeasurements();
 }

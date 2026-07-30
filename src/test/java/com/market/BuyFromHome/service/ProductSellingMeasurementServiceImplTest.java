@@ -300,6 +300,30 @@ class ProductSellingMeasurementServiceImplTest {
 
     }
 
+
+    @Test
+    @DisplayName("Should throw exception when no selling measurements are available")
+    void shouldThrowExceptionWhenNoSellingMeasurementsAreAvailable() {
+
+        when(productSellingMeasurementRepository.findAll())
+                .thenReturn(List.of());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> productSellingMeasurementServiceImpl
+                        .getAllSellingMeasurements()
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("No selling measurements available.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(productSellingMeasurementRepository)
+                .findAll();
+    }
+
     @Test
     @DisplayName("Should get selling measurements by product option")
     void shouldGetSellingMeasurementsByProductOption() {

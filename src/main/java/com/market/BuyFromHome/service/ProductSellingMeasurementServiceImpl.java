@@ -83,8 +83,17 @@ public class ProductSellingMeasurementServiceImpl implements ProductSellingMeasu
     @Override
     public List<ProductSellingMeasurementResponseDto> getAllSellingMeasurements() {
 
-        return productSellingMeasurementRepository.findAll()
-                .stream()
+        List<ProductSellingMeasurement> measurements =
+                productSellingMeasurementRepository.findAll();
+
+        if (measurements.isEmpty()) {
+            throw new AppException(
+                    "No selling measurements available.",
+                    HttpStatus.NOT_FOUND
+            );
+        }
+
+        return measurements.stream()
                 .map(this::mapToResponse)
                 .toList();
     }

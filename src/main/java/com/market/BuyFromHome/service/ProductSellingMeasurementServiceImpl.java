@@ -27,7 +27,7 @@ public class ProductSellingMeasurementServiceImpl implements ProductSellingMeasu
         ProductOption productOption = productOptionRepository.findById(
                 requestDto.getProductOptionId()
         ).orElseThrow(() ->
-                new AppException("Product of not found.",
+                new AppException("Product option not found.",
                         HttpStatus.NOT_FOUND)
         );
 

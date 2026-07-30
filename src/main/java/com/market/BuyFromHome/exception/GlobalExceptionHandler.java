@@ -97,7 +97,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ErrorResponse> handleMethodNotSupported(
             HttpRequestMethodNotSupportedException ex,
-            HttpServletRequest request) {
+            HttpServletRequest request
+    ) {
 
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
                 .body(

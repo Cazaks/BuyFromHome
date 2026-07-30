@@ -1,4 +1,4 @@
-package com.market.BuyFromHome.dto.responseDto.productSellingResonse;
+package com.market.BuyFromHome.dto.responseDto.productSellingResponse;
 
 import com.market.BuyFromHome.enums.MeasurementUnit;
 import lombok.Builder;

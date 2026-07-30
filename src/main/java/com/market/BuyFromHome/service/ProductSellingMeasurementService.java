@@ -17,4 +17,8 @@ public interface ProductSellingMeasurementService{
 
     @Transactional(readOnly = true)
     List<ProductSellingMeasurementResponseDto> getAllSellingMeasurements();
+
+    @Transactional(readOnly = true)
+    List<ProductSellingMeasurementResponseDto> getSellingMeasurementsByProductOption(
+            Long productOptionId);
 }

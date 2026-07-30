@@ -297,7 +297,65 @@ class ProductSellingMeasurementServiceImplTest {
 
         verify(productSellingMeasurementRepository)
                 .findAll();
+
     }
+
+    @Test
+    @DisplayName("Should get selling measurements by product option")
+    void shouldGetSellingMeasurementsByProductOption() {
+
+        ProductOption productOption = buildProductOption();
+
+        ProductSellingMeasurement firstMeasurement =
+                ProductSellingMeasurement.builder()
+                        .sellingMeasurementId(1L)
+                        .productOption(productOption)
+                        .measurementUnit(MeasurementUnit.DERICA)
+                        .sellingPrice(new BigDecimal("2500.00"))
+                        .quantityInStock(20)
+                        .enabled(true)
+                        .build();
+
+        ProductSellingMeasurement secondMeasurement =
+                ProductSellingMeasurement.builder()
+                        .sellingMeasurementId(2L)
+                        .productOption(productOption)
+                        .measurementUnit(MeasurementUnit.BAG)
+                        .sellingPrice(new BigDecimal("95000.00"))
+                        .quantityInStock(10)
+                        .enabled(true)
+                        .build();
+
+        when(productSellingMeasurementRepository
+                .findByProductOption_ProductOptionIdAndEnabledTrue(1L))
+                .thenReturn(List.of(firstMeasurement, secondMeasurement));
+
+        List<ProductSellingMeasurementResponseDto> response =
+                productSellingMeasurementServiceImpl
+                        .getSellingMeasurementsByProductOption(1L);
+
+        assertThat(response).hasSize(2);
+
+        assertThat(response.get(0).getSellingMeasurementId())
+                .isEqualTo(1L);
+
+        assertThat(response.get(0).getProductName())
+                .isEqualTo("Rice");
+
+        assertThat(response.get(0).getMeasurementUnit())
+                .isEqualTo(MeasurementUnit.DERICA);
+
+        assertThat(response.get(1).getSellingMeasurementId())
+                .isEqualTo(2L);
+
+        assertThat(response.get(1).getMeasurementUnit())
+                .isEqualTo(MeasurementUnit.BAG);
+
+        verify(productSellingMeasurementRepository)
+                .findByProductOption_ProductOptionIdAndEnabledTrue(1L);
+    }
+
+
     private ProductOption buildProductOption() {
 
 
@@ -313,6 +371,7 @@ class ProductSellingMeasurementServiceImplTest {
                 .productSpecification("Short Grain")
                 .build();
     }
+
 
     private ProductSellingMeasurementRequestDto buildRequestDto() {
 

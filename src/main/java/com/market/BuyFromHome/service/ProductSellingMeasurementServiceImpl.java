@@ -89,6 +89,18 @@ public class ProductSellingMeasurementServiceImpl implements ProductSellingMeasu
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public List<ProductSellingMeasurementResponseDto> getSellingMeasurementsByProductOption(
+            Long productOptionId) {
+
+        return productSellingMeasurementRepository
+                .findByProductOption_ProductOptionIdAndEnabledTrue(productOptionId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
     private ProductSellingMeasurementResponseDto mapToResponse(
             ProductSellingMeasurement measurement){
 

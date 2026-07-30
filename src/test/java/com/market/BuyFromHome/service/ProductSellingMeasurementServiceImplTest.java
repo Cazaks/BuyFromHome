@@ -356,6 +356,42 @@ class ProductSellingMeasurementServiceImplTest {
     }
 
     @Test
+    @DisplayName("Should return only enabled selling measurements by product option")
+    void shouldReturnOnlyEnabledSellingMeasurementsByProductOption() {
+
+        ProductOption productOption = buildProductOption();
+
+        ProductSellingMeasurement enabledMeasurement =
+                ProductSellingMeasurement.builder()
+                        .sellingMeasurementId(1L)
+                        .productOption(productOption)
+                        .measurementUnit(MeasurementUnit.DERICA)
+                        .sellingPrice(new BigDecimal("2500.00"))
+                        .quantityInStock(20)
+                        .enabled(true)
+                        .build();
+
+        when(productSellingMeasurementRepository
+                .findByProductOption_ProductOptionIdAndEnabledTrue(1L))
+                .thenReturn(List.of(enabledMeasurement));
+
+        List<ProductSellingMeasurementResponseDto> response =
+                productSellingMeasurementServiceImpl
+                        .getSellingMeasurementsByProductOption(1L);
+
+        assertThat(response).hasSize(1);
+
+        assertThat(response.getFirst().getSellingMeasurementId())
+                .isEqualTo(1L);
+
+        assertThat(response.getFirst().isEnabled())
+                .isTrue();
+
+        verify(productSellingMeasurementRepository)
+                .findByProductOption_ProductOptionIdAndEnabledTrue(1L);
+    }
+
+    @Test
     @DisplayName("Should update selling measurement successfully")
     void shouldUpdateSellingMeasurementSuccessfully() {
 

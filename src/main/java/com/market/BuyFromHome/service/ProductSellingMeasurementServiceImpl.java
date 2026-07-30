@@ -103,9 +103,20 @@ public class ProductSellingMeasurementServiceImpl implements ProductSellingMeasu
     public List<ProductSellingMeasurementResponseDto> getSellingMeasurementsByProductOption(
             Long productOptionId) {
 
-        return productSellingMeasurementRepository
-                .findByProductOption_ProductOptionIdAndEnabledTrue(productOptionId)
-                .stream()
+        List<ProductSellingMeasurement> measurements =
+                productSellingMeasurementRepository
+                        .findByProductOption_ProductOptionIdAndEnabledTrue(
+                                productOptionId
+                        );
+
+        if (measurements.isEmpty()) {
+            throw new AppException(
+                    "No selling measurements available for this product option.",
+                    HttpStatus.NOT_FOUND
+            );
+        }
+
+        return measurements.stream()
                 .map(this::mapToResponse)
                 .toList();
     }

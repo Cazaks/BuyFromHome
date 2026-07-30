@@ -223,8 +223,8 @@ class ProductSellingMeasurementServiceImplTest {
     }
 
     @Test
-    @DisplayName("Should throw when selling measurement does not exist")
-    void shouldThrowWhenSellingMeasurementDoesNotExist() {
+    @DisplayName("Should throw exception when selling measurement does not exist")
+    void shouldThrowExceptionWhenSellingMeasurementDoesNotExist() {
 
         when(productSellingMeasurementRepository.findById(1L))
                 .thenReturn(Optional.empty());
@@ -410,6 +410,30 @@ class ProductSellingMeasurementServiceImplTest {
 
         assertThat(response.getFirst().isEnabled())
                 .isTrue();
+
+        verify(productSellingMeasurementRepository)
+                .findByProductOption_ProductOptionIdAndEnabledTrue(1L);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when no selling measurements are available for product option")
+    void shouldThrowExceptionWhenNoSellingMeasurementsAreAvailableForProductOption() {
+
+        when(productSellingMeasurementRepository
+                .findByProductOption_ProductOptionIdAndEnabledTrue(1L))
+                .thenReturn(List.of());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> productSellingMeasurementServiceImpl
+                        .getSellingMeasurementsByProductOption(1L)
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("No selling measurements available for this product option.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
 
         verify(productSellingMeasurementRepository)
                 .findByProductOption_ProductOptionIdAndEnabledTrue(1L);

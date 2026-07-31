@@ -1,4 +1,4 @@
-package com.market.BuyFromHome.dto.requestDto.addressRequestDto;
+package com.market.BuyFromHome.dto.requestDto.addressRequest;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -7,7 +7,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class AddressRequest {
+public class AddressRequestDto {
 
     @NotBlank(message = "Street address is required")
     private String streetAddress;

@@ -1,4 +1,4 @@
-package com.market.BuyFromHome.dto.responseDto.addressResponseDto;
+package com.market.BuyFromHome.dto.responseDto.addressResponse;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,9 +9,10 @@ import lombok.Setter;
 @Setter
 @Builder
 @AllArgsConstructor
-public class AddressResponseRequest {
+public class AddressResponseDto {
     private Long id;
     private String streetAddress;
+    private String phoneNumber;
     private String city;
     private String state;
     private String country;

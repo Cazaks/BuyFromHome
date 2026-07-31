@@ -20,6 +20,9 @@ public class Address extends BasicEntity{
     private String streetAddress;
 
     @Column(nullable = false)
+    private String phoneNumber;
+
+    @Column(nullable = false)
     private String city;
 
     @Column(nullable = false)

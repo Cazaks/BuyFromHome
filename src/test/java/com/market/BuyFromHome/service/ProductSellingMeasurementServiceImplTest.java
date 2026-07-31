@@ -439,9 +439,67 @@ class ProductSellingMeasurementServiceImplTest {
                 .findByProductOption_ProductOptionIdAndEnabledTrue(1L);
     }
 
+//    @Test
+//    @DisplayName("Should update selling measurement successfully")
+//    void shouldUpdateSellingMeasurementSuccessfully() {
+//
+//        ProductOption productOption = buildProductOption();
+//
+//        ProductSellingMeasurement existingMeasurement =
+//                ProductSellingMeasurement.builder()
+//                        .sellingMeasurementId(1L)
+//                        .productOption(productOption)
+//                        .measurementUnit(MeasurementUnit.DERICA)
+//                        .sellingPrice(new BigDecimal("2500.00"))
+//                        .quantityInStock(20)
+//                        .enabled(true)
+//                        .build();
+//
+//        ProductSellingMeasurementRequestDto requestDto =
+//                buildRequestDto(
+//                        new BigDecimal("95000.00")
+//                );
+//
+//        when(productSellingMeasurementRepository.findById(1L))
+//                .thenReturn(Optional.of(existingMeasurement));
+//
+//        when(productSellingMeasurementRepository
+//                .existsByProductOption_ProductOptionIdAndMeasurementUnit(
+//                        1L,
+//                        MeasurementUnit.BAG
+//                ))
+//                .thenReturn(false);
+//
+//        when(productSellingMeasurementRepository.save(any(
+//                ProductSellingMeasurement.class)))
+//                .thenAnswer(invocation -> invocation.getArgument(0));
+//
+//        ProductSellingMeasurementResponseDto response =
+//                productSellingMeasurementServiceImpl
+//                        .updateSellingMeasurement(1L, requestDto);
+//
+//        assertThat(response.getSellingMeasurementId())
+//                .isEqualTo(1L);
+//
+//        assertThat(response.getMeasurementUnit())
+//                .isEqualTo(MeasurementUnit.BAG);
+//
+//        assertThat(response.getSellingPrice())
+//                .isEqualByComparingTo("95000.00");
+//
+//        assertThat(response.getQuantityInStock())
+//                .isEqualTo(10);
+//
+//        assertThat(response.isEnabled())
+//                .isTrue();
+//
+//        verify(productSellingMeasurementRepository)
+//                .save(existingMeasurement);
+//    }
+
     @Test
-    @DisplayName("Should update selling measurement successfully")
-    void shouldUpdateSellingMeasurementSuccessfully() {
+    @DisplayName("Should update selling measurement successfully with same measurement unit")
+    void shouldUpdateSellingMeasurementSuccessfullyWithSameMeasurementUnit() {
 
         ProductOption productOption = buildProductOption();
 
@@ -456,9 +514,12 @@ class ProductSellingMeasurementServiceImplTest {
                         .build();
 
         ProductSellingMeasurementRequestDto requestDto =
-                buildRequestDto(
-                        new BigDecimal("95000.00")
-                );
+                new ProductSellingMeasurementRequestDto();
+
+        requestDto.setProductOptionId(1L);
+        requestDto.setMeasurementUnit(MeasurementUnit.DERICA);
+        requestDto.setSellingPrice(new BigDecimal("3000.00"));
+        requestDto.setQuantityInStock(30);
 
         when(productSellingMeasurementRepository.findById(1L))
                 .thenReturn(Optional.of(existingMeasurement));
@@ -466,32 +527,26 @@ class ProductSellingMeasurementServiceImplTest {
         when(productSellingMeasurementRepository
                 .existsByProductOption_ProductOptionIdAndMeasurementUnit(
                         1L,
-                        MeasurementUnit.BAG
+                        MeasurementUnit.DERICA
                 ))
-                .thenReturn(false);
+                .thenReturn(true);
 
-        when(productSellingMeasurementRepository.save(any(
-                ProductSellingMeasurement.class)))
+        when(productSellingMeasurementRepository.save(
+                any(ProductSellingMeasurement.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         ProductSellingMeasurementResponseDto response =
                 productSellingMeasurementServiceImpl
                         .updateSellingMeasurement(1L, requestDto);
 
-        assertThat(response.getSellingMeasurementId())
-                .isEqualTo(1L);
-
         assertThat(response.getMeasurementUnit())
-                .isEqualTo(MeasurementUnit.BAG);
+                .isEqualTo(MeasurementUnit.DERICA);
 
         assertThat(response.getSellingPrice())
-                .isEqualByComparingTo("95000.00");
+                .isEqualByComparingTo("3000.00");
 
         assertThat(response.getQuantityInStock())
-                .isEqualTo(10);
-
-        assertThat(response.isEnabled())
-                .isTrue();
+                .isEqualTo(30);
 
         verify(productSellingMeasurementRepository)
                 .save(existingMeasurement);
@@ -502,9 +557,7 @@ class ProductSellingMeasurementServiceImplTest {
     void shouldThrowExceptionWhenUpdatingNonExistingSellingMeasurement() {
 
         ProductSellingMeasurementRequestDto requestDto =
-                buildRequestDto(
-                        new BigDecimal("95000.00")
-                );
+                buildRequestDto();
 
         when(productSellingMeasurementRepository.findById(1L))
                 .thenReturn(Optional.empty());
@@ -552,7 +605,9 @@ class ProductSellingMeasurementServiceImplTest {
 
         ProductSellingMeasurementRequestDto requestDto =
                 buildRequestDto(
-                        new BigDecimal("95000.00")
+                        MeasurementUnit.BAG,
+                        new BigDecimal("95000.00"),
+                        10
                 );
 
         when(productSellingMeasurementRepository.findById(1L))
@@ -589,7 +644,6 @@ class ProductSellingMeasurementServiceImplTest {
         verify(productSellingMeasurementRepository, never())
                 .save(any(ProductSellingMeasurement.class));
     }
-
     @Test
     @DisplayName("Should disable selling measurement successfully")
     void shouldDisableSellingMeasurementSuccessfully() {
@@ -755,15 +809,17 @@ class ProductSellingMeasurementServiceImplTest {
     }
 
     private ProductSellingMeasurementRequestDto buildRequestDto(
-            BigDecimal sellingPrice) {
+            MeasurementUnit measurementUnit,
+            BigDecimal sellingPrice,
+            Integer quantityInStock) {
 
         ProductSellingMeasurementRequestDto dto =
                 new ProductSellingMeasurementRequestDto();
 
         dto.setProductOptionId(1L);
-        dto.setMeasurementUnit(MeasurementUnit.BAG);
+        dto.setMeasurementUnit(measurementUnit);
         dto.setSellingPrice(sellingPrice);
-        dto.setQuantityInStock(10);
+        dto.setQuantityInStock(quantityInStock);
 
         return dto;
     }

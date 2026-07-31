@@ -44,7 +44,6 @@ class ProductOptionServiceImplTest {
 
         ProductOptionRequestDto requestDto =
                 buildRequestDto(
-                        1L,
                         "Local Rice",
                         "Short Grain"
                 );
@@ -87,7 +86,6 @@ class ProductOptionServiceImplTest {
 
         ProductOptionRequestDto requestDto =
                 buildRequestDto(
-                        1L,
                         "Local Rice",
                         "Short Grain"
                 );
@@ -128,7 +126,6 @@ class ProductOptionServiceImplTest {
 
         ProductOptionRequestDto requestDto =
                 buildRequestDto(
-                        1L,
                         "Local Rice",
                         "Short Grain"
                 );
@@ -175,7 +172,6 @@ class ProductOptionServiceImplTest {
 
         ProductOptionRequestDto requestDto =
                 buildRequestDto(
-                        1L,
                         "Yellow Garri",
                         null
                 );
@@ -229,7 +225,6 @@ class ProductOptionServiceImplTest {
 
         ProductOptionRequestDto requestDto =
                 buildRequestDto(
-                        1L,
                         "Local Rice",
                         "   Short Grain   "
                 );
@@ -418,8 +413,8 @@ class ProductOptionServiceImplTest {
 
         assertThat(response).hasSize(2);
 
-        assertThat(response.get(0).getProductOptionId()).isEqualTo(1L);
-        assertThat(response.get(0).getProductName()).isEqualTo("Rice");
+        assertThat(response.getFirst().getProductOptionId()).isEqualTo(1L);
+        assertThat(response.getFirst().getProductName()).isEqualTo("Rice");
         assertThat(response.get(0).getProductVariety()).isEqualTo("Local Rice");
         assertThat(response.get(0).getProductSpecification()).isEqualTo("Short Grain");
 
@@ -493,7 +488,6 @@ class ProductOptionServiceImplTest {
 
         ProductOptionRequestDto requestDto =
                 buildRequestDto(
-                        1L,
                         "Foreign Rice",
                         "Long Grain"
                 );
@@ -540,7 +534,6 @@ class ProductOptionServiceImplTest {
 
         ProductOptionRequestDto requestDto =
                 buildRequestDto(
-                        1L,
                         "Foreign Rice",
                         "Long Grain"
                 );
@@ -589,7 +582,6 @@ class ProductOptionServiceImplTest {
 
         ProductOptionRequestDto requestDto =
                 buildRequestDto(
-                        1L,
                         "Foreign Rice",
                         "Long Grain"
                 );
@@ -646,7 +638,6 @@ class ProductOptionServiceImplTest {
 
         ProductOptionRequestDto requestDto =
                 buildRequestDto(
-                        1L,
                         "White Garri",
                         null
                 );
@@ -705,9 +696,14 @@ class ProductOptionServiceImplTest {
         when(productOptionRepository.findById(1L))
                 .thenReturn(Optional.of(productOption));
 
-        productOptionServiceImpl.disableProductOption(1L);
+        when(productOptionRepository.save(any(ProductOption.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        ProductOptionResponseDto response =
+                productOptionServiceImpl.disableProductOption(1L);
 
         assertThat(productOption.isEnabled()).isFalse();
+        assertThat(response.isEnabled()).isFalse();
 
         verify(productOptionRepository).findById(1L);
         verify(productOptionRepository).save(productOption);
@@ -753,9 +749,14 @@ class ProductOptionServiceImplTest {
         when(productOptionRepository.findById(1L))
                 .thenReturn(Optional.of(productOption));
 
-        productOptionServiceImpl.enableProductOption(1L);
+        when(productOptionRepository.save(any(ProductOption.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        ProductOptionResponseDto response =
+                productOptionServiceImpl.enableProductOption(1L);
 
         assertThat(productOption.isEnabled()).isTrue();
+        assertThat(response.isEnabled()).isTrue();
 
         verify(productOptionRepository).findById(1L);
         verify(productOptionRepository).save(productOption);
@@ -784,13 +785,12 @@ class ProductOptionServiceImplTest {
     }
 
     private ProductOptionRequestDto buildRequestDto(
-            Long productId,
             String productVariety,
             String productSpecification) {
 
         ProductOptionRequestDto dto = new ProductOptionRequestDto();
 
-        dto.setProductId(productId);
+        dto.setProductId(1L);
         dto.setProductVariety(productVariety);
         dto.setProductSpecification(productSpecification);
 

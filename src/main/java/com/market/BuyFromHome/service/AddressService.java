@@ -21,4 +21,8 @@ public interface AddressService {
             Long userId,
             Long addressId,
             AddressRequestDto requestDto);
+
+    AddressResponseDto disableAddress(
+            Long userId,
+            Long addressId);
 }

@@ -944,6 +944,129 @@ class AddressServiceImplTest {
                 .save(any(Address.class));
     }
 
+    @Test
+    @DisplayName("Should disable non-default address successfully")
+    void shouldDisableNonDefaultAddressSuccessfully() {
+
+        User user = buildUser();
+
+        Address address =
+                Address.builder()
+                        .addressId(2L)
+                        .streetAddress("13 Yaba Street")
+                        .phoneNumber("08123456789")
+                        .city("Lagos")
+                        .state("Lagos")
+                        .country("Nigeria")
+                        .landmark("Near the mall")
+                        .isDefault(false)
+                        .enabled(true)
+                        .user(user)
+                        .build();
+
+        when(addressRepository.findById(2L))
+                .thenReturn(Optional.of(address));
+
+        when(addressRepository.save(any(Address.class)))
+                .thenAnswer(invocation ->
+                        invocation.getArgument(0));
+
+        AddressResponseDto response =
+                addressServiceImpl.disableAddress(
+                        user.getUserId(),
+                        2L
+                );
+
+        assertThat(response).isNotNull();
+
+        assertThat(response.getId())
+                .isEqualTo(2L);
+
+        assertThat(response.isDefault())
+                .isFalse();
+
+        assertThat(response.isEnabled())
+                .isFalse();
+
+        assertThat(address.isEnabled())
+                .isFalse();
+
+        verify(addressRepository)
+                .findById(2L);
+
+        verify(addressRepository)
+                .save(address);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when disabling default address")
+    void shouldThrowExceptionWhenDisablingDefaultAddress() {
+
+        User user = buildUser();
+
+        Address defaultAddress =
+                buildAddress(user);
+
+        when(addressRepository.findById(1L))
+                .thenReturn(Optional.of(defaultAddress));
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> addressServiceImpl.disableAddress(
+                        user.getUserId(),
+                        1L
+                )
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Cannot disable the default address.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        assertThat(defaultAddress.isDefault())
+                .isTrue();
+
+        assertThat(defaultAddress.isEnabled())
+                .isTrue();
+
+        verify(addressRepository)
+                .findById(1L);
+
+        verify(addressRepository, never())
+                .save(any(Address.class));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when disabling non-existing address")
+    void shouldThrowExceptionWhenDisablingNonExistingAddress() {
+
+        User user = buildUser();
+
+        when(addressRepository.findById(99L))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> addressServiceImpl.disableAddress(
+                        user.getUserId(),
+                        99L
+                )
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Address not found.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(addressRepository)
+                .findById(99L);
+
+        verify(addressRepository, never())
+                .save(any(Address.class));
+    }
+
     private User buildUser() {
 
         return User.builder()
@@ -954,6 +1077,48 @@ class AddressServiceImplTest {
                 .phoneNumber("08012345678")
                 .build();
     }
+
+    @Test
+    @DisplayName("Should throw exception when disabling another user's address")
+    void shouldThrowExceptionWhenDisablingAnotherUsersAddress() {
+
+        User user = buildUser();
+
+        User anotherUser =
+                User.builder()
+                        .userId(2L)
+                        .build();
+
+        Address anotherUsersAddress =
+                buildAddress(anotherUser);
+
+        when(addressRepository.findById(1L))
+                .thenReturn(Optional.of(anotherUsersAddress));
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> addressServiceImpl.disableAddress(
+                        user.getUserId(),
+                        1L
+                )
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Address does not belong to user.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        assertThat(anotherUsersAddress.isEnabled())
+                .isTrue();
+
+        verify(addressRepository)
+                .findById(1L);
+
+        verify(addressRepository, never())
+                .save(any(Address.class));
+    }
+
 
     private Address buildAddress(User user) {
 

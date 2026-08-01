@@ -108,6 +108,13 @@ public class AddressServiceImpl implements AddressService{
             );
         }
 
+        if (!newDefaultAddress.isEnabled()) {
+            throw new AppException(
+                    "Cannot set a disabled address as default.",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
         List<Address> addresses =
                 addressRepository.findByUser_UserId(userId);
 
@@ -210,6 +217,43 @@ public class AddressServiceImpl implements AddressService{
 
         return mapToResponse(updatedAddress);
     }
+
+    @Override
+    public AddressResponseDto disableAddress(
+            Long userId,
+            Long addressId) {
+
+        Address address =
+                addressRepository.findById(addressId)
+                        .orElseThrow(() ->
+                                new AppException(
+                                        "Address not found.",
+                                        HttpStatus.NOT_FOUND
+                                ));
+
+        if (!address.getUser().getUserId().equals(userId)) {
+            throw new AppException(
+                    "Address does not belong to user.",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        if (address.isDefault()) {
+            throw new AppException(
+                    "Cannot disable the default address.",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        address.setEnabled(false);
+
+        Address disabledAddress =
+                addressRepository.save(address);
+
+        return mapToResponse(disabledAddress);
+    }
+
+
 
     private AddressResponseDto mapToResponse(Address address){
         return AddressResponseDto.builder()

@@ -184,6 +184,19 @@ public class AddressServiceImpl implements AddressService{
             );
         }
 
+        if (!requestDto.isDefault()
+                && address.isDefault()
+                && existingAddresses.stream()
+                .noneMatch(existingAddress ->
+                        !existingAddress.getAddressId().equals(addressId)
+                                && existingAddress.isDefault())) {
+
+            throw new AppException(
+                    "User must have a default address.",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
         address.setStreetAddress(requestDto.getStreetAddress());
         address.setPhoneNumber(requestDto.getPhoneNumber());
         address.setCity(requestDto.getCity());
@@ -208,6 +221,7 @@ public class AddressServiceImpl implements AddressService{
                 .country(address.getCountry())
                 .landmark(address.getLandmark())
                 .isDefault(address.isDefault())
+                .enabled(address.isEnabled())
                 .build();
     }
 }

@@ -377,6 +377,7 @@ class AddressServiceImplTest {
                         .country("Nigeria")
                         .landmark("Near the mall")
                         .isDefault(false)
+                        .enabled(true)
                         .user(user)
                         .build();
 
@@ -895,6 +896,54 @@ class AddressServiceImplTest {
                 .save(any(Address.class));
     }
 
+    @Test
+    @DisplayName("Should throw exception when removing the only default address")
+    void shouldThrowExceptionWhenRemovingOnlyDefaultAddress() {
+
+        User user = buildUser();
+
+        Address currentDefaultAddress =
+                buildAddress(user);
+
+        AddressRequestDto requestDto =
+                buildRequestDto();
+
+        requestDto.setDefault(false);
+
+        when(addressRepository.findById(1L))
+                .thenReturn(Optional.of(currentDefaultAddress));
+
+        when(addressRepository.findByUser_UserId(user.getUserId()))
+                .thenReturn(List.of(currentDefaultAddress));
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> addressServiceImpl.updateAddress(
+                        user.getUserId(),
+                        1L,
+                        requestDto
+                )
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("User must have a default address.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        assertThat(currentDefaultAddress.isDefault())
+                .isTrue();
+
+        verify(addressRepository)
+                .findById(1L);
+
+        verify(addressRepository)
+                .findByUser_UserId(user.getUserId());
+
+        verify(addressRepository, never())
+                .save(any(Address.class));
+    }
+
     private User buildUser() {
 
         return User.builder()
@@ -917,6 +966,7 @@ class AddressServiceImplTest {
                 .country("Nigeria")
                 .landmark("Beside First Bank")
                 .isDefault(true)
+                .enabled(true)
                 .user(user)
                 .build();
     }

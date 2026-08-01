@@ -18,4 +18,5 @@ public class AddressResponseDto {
     private String country;
     private String landmark;
     private boolean isDefault;
+    private boolean enabled;
 }

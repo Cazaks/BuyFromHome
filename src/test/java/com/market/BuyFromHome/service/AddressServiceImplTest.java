@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -263,6 +264,81 @@ class AddressServiceImplTest {
 
         verify(addressRepository)
                 .findById(1L);
+    }
+
+    @Test
+    @DisplayName("Should get all addresses for user successfully")
+    void shouldGetAllAddressesForUserSuccessfully() {
+
+        User user = User.builder()
+                .userId(1L)
+                .firstName("John")
+                .lastName("Doe")
+                .email("john@example.com")
+                .phoneNumber("08012345678")
+                .build();
+
+        Address firstAddress =
+                Address.builder()
+                        .addressId(1L)
+                        .streetAddress("12 Allen Avenue")
+                        .phoneNumber("09012345678")
+                        .city("Ikeja")
+                        .state("Lagos")
+                        .country("Nigeria")
+                        .landmark("Beside First Bank")
+                        .isDefault(true)
+                        .user(user)
+                        .build();
+
+        Address secondAddress =
+                Address.builder()
+                        .addressId(2L)
+                        .streetAddress("25 Admiralty Way")
+                        .phoneNumber("08123456789")
+                        .city("Lekki")
+                        .state("Lagos")
+                        .country("Nigeria")
+                        .landmark("Near the mall")
+                        .isDefault(false)
+                        .user(user)
+                        .build();
+
+        when(addressRepository.findByUser_UserId(1L))
+                .thenReturn(List.of(firstAddress, secondAddress));
+
+        List<AddressResponseDto> response =
+                addressServiceImpl.getAllAddresses(1L);
+
+        assertThat(response)
+                .hasSize(2);
+
+        assertThat(response.get(0).getId())
+                .isEqualTo(1L);
+
+        assertThat(response.get(0).getStreetAddress())
+                .isEqualTo("12 Allen Avenue");
+
+        assertThat(response.get(0).getPhoneNumber())
+                .isEqualTo("09012345678");
+
+        assertThat(response.get(0).isDefault())
+                .isTrue();
+
+        assertThat(response.get(1).getId())
+                .isEqualTo(2L);
+
+        assertThat(response.get(1).getStreetAddress())
+                .isEqualTo("25 Admiralty Way");
+
+        assertThat(response.get(1).getPhoneNumber())
+                .isEqualTo("08123456789");
+
+        assertThat(response.get(1).isDefault())
+                .isFalse();
+
+        verify(addressRepository)
+                .findByUser_UserId(1L);
     }
 
     private AddressRequestDto buildRequestDto() {

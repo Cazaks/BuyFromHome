@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 
 @Service
 @RequiredArgsConstructor
@@ -46,7 +48,6 @@ public class AddressServiceImpl implements AddressService{
             );
         }
 
-
         Address address = Address.builder()
                 .streetAddress(requestDto.getStreetAddress())
                 .phoneNumber(requestDto.getPhoneNumber())
@@ -75,6 +76,17 @@ public class AddressServiceImpl implements AddressService{
                                 ));
 
         return mapToResponse(address);
+    }
+
+    @Override
+    public List<AddressResponseDto> getAllAddresses(Long userId) {
+
+        List<Address> addresses =
+                addressRepository.findByUser_UserId(userId);
+
+        return addresses.stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     private AddressResponseDto mapToResponse(Address address){

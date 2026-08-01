@@ -148,6 +148,56 @@ public class AddressServiceImpl implements AddressService{
                 .toList();
     }
 
+    @Override
+    public AddressResponseDto updateAddress(
+            Long userId,
+            Long addressId,
+            AddressRequestDto requestDto) {
+
+        Address address =
+                addressRepository.findById(addressId)
+                        .orElseThrow(() ->
+                                new AppException(
+                                        "Address not found.",
+                                        HttpStatus.NOT_FOUND
+                                ));
+
+        if (!address.getUser().getUserId().equals(userId)) {
+            throw new AppException(
+                    "Address does not belong to user.",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        List<Address> existingAddresses =
+                addressRepository.findByUser_UserId(userId);
+
+        if (requestDto.isDefault()
+                && existingAddresses.stream()
+                .anyMatch(existingAddress ->
+                        !existingAddress.getAddressId().equals(addressId)
+                                && existingAddress.isDefault())) {
+
+            throw new AppException(
+                    "User already has a default address.",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        address.setStreetAddress(requestDto.getStreetAddress());
+        address.setPhoneNumber(requestDto.getPhoneNumber());
+        address.setCity(requestDto.getCity());
+        address.setState(requestDto.getState());
+        address.setCountry(requestDto.getCountry());
+        address.setLandmark(requestDto.getLandmark());
+        address.setDefault(requestDto.isDefault());
+
+        Address updatedAddress =
+                addressRepository.save(address);
+
+        return mapToResponse(updatedAddress);
+    }
+
     private AddressResponseDto mapToResponse(Address address){
         return AddressResponseDto.builder()
                 .id(address.getAddressId())

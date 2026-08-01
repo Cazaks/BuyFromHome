@@ -684,6 +684,217 @@ class AddressServiceImplTest {
                 .findByUser_UserId(user.getUserId());
     }
 
+    @Test
+    @DisplayName("Should update address successfully")
+    void shouldUpdateAddressSuccessfully() {
+
+        User user = buildUser();
+
+        Address existingAddress =
+                buildAddress(user);
+
+        AddressRequestDto requestDto =
+                buildRequestDto();
+
+        requestDto.setStreetAddress("25 Admiralty Way");
+        requestDto.setPhoneNumber("08123456789");
+        requestDto.setCity("Lekki");
+        requestDto.setLandmark("Near the mall");
+        requestDto.setDefault(true);
+
+        when(addressRepository.findById(1L))
+                .thenReturn(Optional.of(existingAddress));
+
+        when(addressRepository.save(any(Address.class)))
+                .thenAnswer(invocation ->
+                        invocation.getArgument(0));
+
+        AddressResponseDto response =
+                addressServiceImpl.updateAddress(
+                        user.getUserId(),
+                        1L,
+                        requestDto
+                );
+
+        assertThat(response).isNotNull();
+
+        assertThat(response.getId())
+                .isEqualTo(1L);
+
+        assertThat(response.getStreetAddress())
+                .isEqualTo("25 Admiralty Way");
+
+        assertThat(response.getPhoneNumber())
+                .isEqualTo("08123456789");
+
+        assertThat(response.getCity())
+                .isEqualTo("Lekki");
+
+        assertThat(response.getLandmark())
+                .isEqualTo("Near the mall");
+
+        assertThat(response.isDefault())
+                .isTrue();
+
+        verify(addressRepository)
+                .findById(1L);
+
+        verify(addressRepository)
+                .save(existingAddress);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when updating non-existing address")
+    void shouldThrowExceptionWhenUpdatingNonExistingAddress() {
+
+        User user = buildUser();
+
+        AddressRequestDto requestDto =
+                buildRequestDto();
+
+        when(addressRepository.findById(99L))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> addressServiceImpl.updateAddress(
+                        user.getUserId(),
+                        99L,
+                        requestDto
+                )
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Address not found.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(addressRepository)
+                .findById(99L);
+
+        verify(addressRepository, never())
+                .findByUser_UserId(anyLong());
+
+        verify(addressRepository, never())
+                .save(any(Address.class));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when updating another user's address")
+    void shouldThrowExceptionWhenUpdatingAnotherUsersAddress() {
+
+        User user = buildUser();
+
+        User anotherUser =
+                User.builder()
+                        .userId(2L)
+                        .build();
+
+        Address anotherUsersAddress =
+                buildAddress(anotherUser);
+
+        AddressRequestDto requestDto =
+                buildRequestDto();
+
+        when(addressRepository.findById(1L))
+                .thenReturn(Optional.of(anotherUsersAddress));
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> addressServiceImpl.updateAddress(
+                        user.getUserId(),
+                        1L,
+                        requestDto
+                )
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Address does not belong to user.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        verify(addressRepository)
+                .findById(1L);
+
+        verify(addressRepository, never())
+                .findByUser_UserId(anyLong());
+
+        verify(addressRepository, never())
+                .save(any(Address.class));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when updating address to default while another default exists")
+    void shouldThrowExceptionWhenUpdatingAddressToDefaultWhileAnotherDefaultExists() {
+
+        User user = buildUser();
+
+        Address currentDefaultAddress =
+                buildAddress(user);
+
+        Address addressToUpdate =
+                Address.builder()
+                        .addressId(2L)
+                        .streetAddress("13 Yaba Street")
+                        .phoneNumber("08123456789")
+                        .city("Lagos")
+                        .state("Lagos")
+                        .country("Nigeria")
+                        .landmark("Near the mall")
+                        .isDefault(false)
+                        .user(user)
+                        .build();
+
+        AddressRequestDto requestDto =
+                buildRequestDto();
+
+        requestDto.setStreetAddress("25 Admiralty Way");
+        requestDto.setPhoneNumber("08098765432");
+        requestDto.setCity("Lekki");
+        requestDto.setDefault(true);
+
+        when(addressRepository.findById(2L))
+                .thenReturn(Optional.of(addressToUpdate));
+
+        when(addressRepository.findByUser_UserId(user.getUserId()))
+                .thenReturn(List.of(
+                        currentDefaultAddress,
+                        addressToUpdate
+                ));
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> addressServiceImpl.updateAddress(
+                        user.getUserId(),
+                        2L,
+                        requestDto
+                )
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("User already has a default address.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        assertThat(currentDefaultAddress.isDefault())
+                .isTrue();
+
+        assertThat(addressToUpdate.isDefault())
+                .isFalse();
+
+        verify(addressRepository)
+                .findById(2L);
+
+        verify(addressRepository)
+                .findByUser_UserId(user.getUserId());
+
+        verify(addressRepository, never())
+                .save(any(Address.class));
+    }
+
     private User buildUser() {
 
         return User.builder()

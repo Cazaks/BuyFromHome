@@ -6,4 +6,6 @@ import com.market.BuyFromHome.dto.responseDto.addressResponse.AddressResponseDto
 public interface AddressService {
     AddressResponseDto createAddress(
             Long userId, AddressRequestDto requestDto);
+
+    AddressResponseDto getAddressById(Long addressId);
 }

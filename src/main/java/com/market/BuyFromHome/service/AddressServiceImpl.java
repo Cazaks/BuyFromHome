@@ -29,6 +29,24 @@ public class AddressServiceImpl implements AddressService{
                                 HttpStatus.NOT_FOUND
                         ));
 
+        boolean addressExists =
+                addressRepository
+                        .existsByUser_UserIdAndStreetAddressIgnoreCaseAndCityIgnoreCaseAndStateIgnoreCaseAndCountryIgnoreCase(
+                                userId,
+                                requestDto.getStreetAddress(),
+                                requestDto.getCity(),
+                                requestDto.getState(),
+                                requestDto.getCountry()
+                        );
+
+        if (addressExists) {
+            throw new AppException(
+                    "Address already exists.",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+
         Address address = Address.builder()
                 .streetAddress(requestDto.getStreetAddress())
                 .phoneNumber(requestDto.getPhoneNumber())
@@ -43,6 +61,20 @@ public class AddressServiceImpl implements AddressService{
         Address savedAddress = addressRepository.save(address);
         return mapToResponse(savedAddress);
 
+    }
+
+    @Override
+    public AddressResponseDto getAddressById(Long addressId) {
+
+        Address address =
+                addressRepository.findById(addressId)
+                        .orElseThrow(() ->
+                                new AppException(
+                                        "Address not found.",
+                                        HttpStatus.NOT_FOUND
+                                ));
+
+        return mapToResponse(address);
     }
 
     private AddressResponseDto mapToResponse(Address address){

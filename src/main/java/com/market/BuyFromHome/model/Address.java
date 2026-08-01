@@ -1,7 +1,10 @@
 package com.market.BuyFromHome.model;
 
+import com.market.BuyFromHome.dto.responseDto.addressResponse.AddressResponseDto;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.Optional;
 
 @Entity
 @Table(name = "Addresses")
@@ -45,3 +48,4 @@ public class Address extends BasicEntity{
     private boolean enabled = true;
 
 }
+

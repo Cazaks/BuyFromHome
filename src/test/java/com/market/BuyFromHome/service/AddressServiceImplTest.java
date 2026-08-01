@@ -1136,6 +1136,147 @@ class AddressServiceImplTest {
                 .build();
     }
 
+
+    @Test
+    @DisplayName("Should enable disabled address successfully")
+    void shouldEnableDisabledAddressSuccessfully() {
+
+        User user = buildUser();
+
+        Address disabledAddress =
+                Address.builder()
+                        .addressId(2L)
+                        .streetAddress("13 Yaba Street")
+                        .phoneNumber("08123456789")
+                        .city("Lagos")
+                        .state("Lagos")
+                        .country("Nigeria")
+                        .landmark("Near the mall")
+                        .isDefault(false)
+                        .enabled(false)
+                        .user(user)
+                        .build();
+
+        when(addressRepository.findById(2L))
+                .thenReturn(Optional.of(disabledAddress));
+
+        when(addressRepository.save(any(Address.class)))
+                .thenAnswer(invocation ->
+                        invocation.getArgument(0));
+
+        AddressResponseDto response =
+                addressServiceImpl.enableAddress(
+                        user.getUserId(),
+                        2L
+                );
+
+        assertThat(response).isNotNull();
+
+        assertThat(response.getId())
+                .isEqualTo(2L);
+
+        assertThat(response.isEnabled())
+                .isTrue();
+
+        assertThat(response.isDefault())
+                .isFalse();
+
+        assertThat(disabledAddress.isEnabled())
+                .isTrue();
+
+        assertThat(disabledAddress.isDefault())
+                .isFalse();
+
+        verify(addressRepository)
+                .findById(2L);
+
+        verify(addressRepository)
+                .save(disabledAddress);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when enabling another user's address")
+    void shouldThrowExceptionWhenEnablingAnotherUsersAddress() {
+
+        User user = buildUser();
+
+        User anotherUser =
+                User.builder()
+                        .userId(2L)
+                        .build();
+
+        Address anotherUsersAddress =
+                Address.builder()
+                        .addressId(2L)
+                        .streetAddress("13 Yaba Street")
+                        .phoneNumber("08123456789")
+                        .city("Lagos")
+                        .state("Lagos")
+                        .country("Nigeria")
+                        .landmark("Near the mall")
+                        .isDefault(false)
+                        .enabled(false)
+                        .user(anotherUser)
+                        .build();
+
+        when(addressRepository.findById(2L))
+                .thenReturn(Optional.of(anotherUsersAddress));
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> addressServiceImpl.enableAddress(
+                        user.getUserId(),
+                        2L
+                )
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Address does not belong to user.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        assertThat(anotherUsersAddress.isEnabled())
+                .isFalse();
+
+        verify(addressRepository)
+                .findById(2L);
+
+        verify(addressRepository, never())
+                .save(any(Address.class));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when enabling non-existing address")
+    void shouldThrowExceptionWhenEnablingNonExistingAddress() {
+
+        User user = buildUser();
+
+        when(addressRepository.findById(99L))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> addressServiceImpl.enableAddress(
+                        user.getUserId(),
+                        99L
+                )
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Address not found.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(addressRepository)
+                .findById(99L);
+
+        verify(addressRepository, never())
+                .save(any(Address.class));
+    }
+
+
     private AddressRequestDto buildRequestDto() {
 
         AddressRequestDto dto =

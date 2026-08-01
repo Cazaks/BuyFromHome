@@ -253,6 +253,34 @@ public class AddressServiceImpl implements AddressService{
         return mapToResponse(disabledAddress);
     }
 
+    @Override
+    public AddressResponseDto enableAddress(
+            Long userId,
+            Long addressId) {
+
+        Address address =
+                addressRepository.findById(addressId)
+                        .orElseThrow(() ->
+                                new AppException(
+                                        "Address not found.",
+                                        HttpStatus.NOT_FOUND
+                                ));
+
+        if (!address.getUser().getUserId().equals(userId)) {
+            throw new AppException(
+                    "Address does not belong to user.",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        address.setEnabled(true);
+
+        Address enabledAddress =
+                addressRepository.save(address);
+
+        return mapToResponse(enabledAddress);
+    }
+
 
 
     private AddressResponseDto mapToResponse(Address address){

@@ -25,4 +25,8 @@ public interface AddressService {
     AddressResponseDto disableAddress(
             Long userId,
             Long addressId);
+
+    AddressResponseDto enableAddress(
+            Long userId,
+            Long addressId);
 }

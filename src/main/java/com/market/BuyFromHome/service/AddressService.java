@@ -9,6 +9,10 @@ public interface AddressService {
     AddressResponseDto createAddress(
             Long userId, AddressRequestDto requestDto);
 
+    AddressResponseDto setDefaultAddress(
+            Long userId,
+            Long addressId);
+
     AddressResponseDto getAddressById(Long addressId);
 
     List<AddressResponseDto> getAllAddresses(Long userId);

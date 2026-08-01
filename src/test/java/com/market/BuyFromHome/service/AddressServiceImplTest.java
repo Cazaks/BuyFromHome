@@ -359,6 +359,212 @@ class AddressServiceImplTest {
     }
 
     @Test
+    @DisplayName("Should change default address successfully")
+    void shouldChangeDefaultAddressSuccessfully() {
+
+        User user = buildUser();
+
+        Address currentDefaultAddress =
+                buildAddress(user);
+
+        Address newDefaultAddress =
+                Address.builder()
+                        .addressId(2L)
+                        .streetAddress("13 Yaba Street")
+                        .phoneNumber("08123456789")
+                        .city("Lagos")
+                        .state("Lagos")
+                        .country("Nigeria")
+                        .landmark("Near the mall")
+                        .isDefault(false)
+                        .user(user)
+                        .build();
+
+        when(addressRepository.findById(2L))
+                .thenReturn(Optional.of(newDefaultAddress));
+
+        when(addressRepository.findByUser_UserId(user.getUserId()))
+                .thenReturn(List.of(
+                        currentDefaultAddress,
+                        newDefaultAddress
+                ));
+
+        when(addressRepository.save(any(Address.class)))
+                .thenAnswer(invocation ->
+                        invocation.getArgument(0));
+
+        AddressResponseDto response =
+                addressServiceImpl
+                        .setDefaultAddress(
+                                user.getUserId(),
+                                2L
+                        );
+
+        assertThat(currentDefaultAddress.isDefault())
+                .isFalse();
+
+        assertThat(newDefaultAddress.isDefault())
+                .isTrue();
+
+        assertThat(response).isNotNull();
+
+        assertThat(response.getId())
+                .isEqualTo(2L);
+
+        assertThat(response.isDefault())
+                .isTrue();
+
+        verify(addressRepository)
+                .findById(2L);
+
+        verify(addressRepository)
+                .findByUser_UserId(user.getUserId());
+
+        verify(addressRepository, atLeastOnce())
+                .save(any(Address.class));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when setting non-existing address as default")
+    void shouldThrowExceptionWhenSettingNonExistingAddressAsDefault() {
+
+        User user = buildUser();
+
+        when(addressRepository.findById(99L))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> addressServiceImpl.setDefaultAddress(
+                        user.getUserId(),
+                        99L
+                )
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Address not found.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(addressRepository)
+                .findById(99L);
+
+        verify(addressRepository, never())
+                .findByUser_UserId(anyLong());
+
+        verify(addressRepository, never())
+                .save(any(Address.class));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when setting another user's address as default")
+    void shouldThrowExceptionWhenSettingAnotherUsersAddressAsDefault() {
+
+        User user = buildUser();
+
+        User anotherUser =
+                User.builder()
+                        .userId(2L)
+                        .build();
+
+        Address anotherUsersAddress =
+                buildAddress(anotherUser);
+
+        when(addressRepository.findById(1L))
+                .thenReturn(Optional.of(anotherUsersAddress));
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> addressServiceImpl.setDefaultAddress(
+                        user.getUserId(),
+                        1L
+                )
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Address does not belong to user.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        verify(addressRepository)
+                .findById(1L);
+
+        verify(addressRepository, never())
+                .findByUser_UserId(anyLong());
+
+        verify(addressRepository, never())
+                .save(any(Address.class));
+    }
+
+    @Test
+    @DisplayName("Should keep address as default when it is already the default")
+    void shouldKeepAddressAsDefaultWhenAlreadyDefault() {
+
+        User user = buildUser();
+
+        Address currentDefaultAddress =
+                buildAddress(user);
+
+        Address secondAddress =
+                Address.builder()
+                        .addressId(2L)
+                        .streetAddress("13 Yaba Street")
+                        .phoneNumber("08123456789")
+                        .city("Lagos")
+                        .state("Lagos")
+                        .country("Nigeria")
+                        .landmark("Near the mall")
+                        .isDefault(false)
+                        .user(user)
+                        .build();
+
+        when(addressRepository.findById(1L))
+                .thenReturn(Optional.of(currentDefaultAddress));
+
+        when(addressRepository.findByUser_UserId(user.getUserId()))
+                .thenReturn(List.of(
+                        currentDefaultAddress,
+                        secondAddress
+                ));
+
+        when(addressRepository.save(any(Address.class)))
+                .thenAnswer(invocation ->
+                        invocation.getArgument(0));
+
+        AddressResponseDto response =
+                addressServiceImpl
+                        .setDefaultAddress(
+                                user.getUserId(),
+                                1L
+                        );
+
+        assertThat(currentDefaultAddress.isDefault())
+                .isTrue();
+
+        assertThat(secondAddress.isDefault())
+                .isFalse();
+
+        assertThat(response).isNotNull();
+
+        assertThat(response.getId())
+                .isEqualTo(1L);
+
+        assertThat(response.isDefault())
+                .isTrue();
+
+        verify(addressRepository)
+                .findById(1L);
+
+        verify(addressRepository)
+                .findByUser_UserId(user.getUserId());
+
+        verify(addressRepository)
+                .save(currentDefaultAddress);
+    }
+
+    @Test
     @DisplayName("Should get address by id successfully")
     void shouldGetAddressByIdSuccessfully() {
 

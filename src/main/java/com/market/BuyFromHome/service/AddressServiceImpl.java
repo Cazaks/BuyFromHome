@@ -89,6 +89,41 @@ public class AddressServiceImpl implements AddressService{
     }
 
     @Override
+    public AddressResponseDto setDefaultAddress(
+            Long userId,
+            Long addressId) {
+
+        Address newDefaultAddress =
+                addressRepository.findById(addressId)
+                        .orElseThrow(() ->
+                                new AppException(
+                                        "Address not found.",
+                                        HttpStatus.NOT_FOUND
+                                ));
+
+        if (!newDefaultAddress.getUser().getUserId().equals(userId)) {
+            throw new AppException(
+                    "Address does not belong to user.",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        List<Address> addresses =
+                addressRepository.findByUser_UserId(userId);
+
+        for (Address address : addresses) {
+            address.setDefault(
+                    address.getAddressId().equals(addressId)
+            );
+        }
+
+        Address savedAddress =
+                addressRepository.save(newDefaultAddress);
+
+        return mapToResponse(savedAddress);
+    }
+
+    @Override
     public AddressResponseDto getAddressById(Long addressId) {
 
         Address address =

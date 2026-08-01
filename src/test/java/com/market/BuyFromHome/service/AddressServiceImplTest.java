@@ -1136,6 +1136,59 @@ class AddressServiceImplTest {
                 .build();
     }
 
+    @Test
+    @DisplayName("Should throw exception when setting disabled address as default")
+    void shouldThrowExceptionWhenSettingDisabledAddressAsDefault() {
+
+        User user = buildUser();
+
+        Address disabledAddress =
+                Address.builder()
+                        .addressId(2L)
+                        .streetAddress("13 Yaba Street")
+                        .phoneNumber("08123456789")
+                        .city("Lagos")
+                        .state("Lagos")
+                        .country("Nigeria")
+                        .landmark("Near the mall")
+                        .isDefault(false)
+                        .enabled(false)
+                        .user(user)
+                        .build();
+
+        when(addressRepository.findById(2L))
+                .thenReturn(Optional.of(disabledAddress));
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> addressServiceImpl.setDefaultAddress(
+                        user.getUserId(),
+                        2L
+                )
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Cannot set a disabled address as default.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        assertThat(disabledAddress.isDefault())
+                .isFalse();
+
+        assertThat(disabledAddress.isEnabled())
+                .isFalse();
+
+        verify(addressRepository)
+                .findById(2L);
+
+        verify(addressRepository, never())
+                .findByUser_UserId(anyLong());
+
+        verify(addressRepository, never())
+                .save(any(Address.class));
+    }
+
 
     @Test
     @DisplayName("Should enable disabled address successfully")

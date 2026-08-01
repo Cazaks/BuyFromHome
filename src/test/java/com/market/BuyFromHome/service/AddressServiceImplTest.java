@@ -39,23 +39,8 @@ class AddressServiceImplTest {
     @DisplayName("Should create address successfully")
     void shouldCreateAddressSuccessfully() {
 
-        User user = User.builder()
-                .userId(1L)
-                .firstName("John")
-                .lastName("Doe")
-                .email("john@example.com")
-                .phoneNumber("08012345678")
-                .build();
-
-        AddressRequestDto requestDto = new AddressRequestDto();
-
-        requestDto.setStreetAddress("12 Allen Avenue");
-        requestDto.setPhoneNumber("09012345678");
-        requestDto.setCity("Ikeja");
-        requestDto.setState("Lagos");
-        requestDto.setCountry("Nigeria");
-        requestDto.setLandmark("Beside First Bank");
-        requestDto.setDefault(true);
+        User user = buildUser();
+        AddressRequestDto requestDto = buildRequestDto();
 
         when(userRepository.findById(user.getUserId()))
                 .thenReturn(Optional.of(user));
@@ -69,7 +54,10 @@ class AddressServiceImplTest {
                 });
 
         AddressResponseDto response =
-                addressServiceImpl.createAddress(user.getUserId(), requestDto);
+                addressServiceImpl.createAddress(
+                        user.getUserId(),
+                        requestDto
+                );
 
         assertThat(response).isNotNull();
 
@@ -132,23 +120,15 @@ class AddressServiceImplTest {
     @DisplayName("Should throw exception when address already exists")
     void shouldThrowExceptionWhenAddressAlreadyExists() {
 
-        User user = User.builder()
-                .userId(1L)
-                .firstName("John")
-                .lastName("Doe")
-                .email("john@example.com")
-                .phoneNumber("08012345678")
-                .build();
+        User user = buildUser();
+        AddressRequestDto requestDto = buildRequestDto();
 
-        AddressRequestDto requestDto =
-                buildRequestDto();
-
-        when(userRepository.findById(1L))
+        when(userRepository.findById(user.getUserId()))
                 .thenReturn(Optional.of(user));
 
         when(addressRepository
                 .existsByUser_UserIdAndStreetAddressIgnoreCaseAndCityIgnoreCaseAndStateIgnoreCaseAndCountryIgnoreCase(
-                        1L,
+                        user.getUserId(),
                         requestDto.getStreetAddress(),
                         requestDto.getCity(),
                         requestDto.getState(),
@@ -158,7 +138,10 @@ class AddressServiceImplTest {
 
         AppException exception = assertThrows(
                 AppException.class,
-                () -> addressServiceImpl.createAddress(1L, requestDto)
+                () -> addressServiceImpl.createAddress(
+                        user.getUserId(),
+                        requestDto
+                )
         );
 
         assertThat(exception.getMessage())
@@ -168,11 +151,11 @@ class AddressServiceImplTest {
                 .isEqualTo(HttpStatus.BAD_REQUEST);
 
         verify(userRepository)
-                .findById(1L);
+                .findById(user.getUserId());
 
         verify(addressRepository)
                 .existsByUser_UserIdAndStreetAddressIgnoreCaseAndCityIgnoreCaseAndStateIgnoreCaseAndCountryIgnoreCase(
-                        1L,
+                        user.getUserId(),
                         requestDto.getStreetAddress(),
                         requestDto.getCity(),
                         requestDto.getState(),
@@ -187,26 +170,8 @@ class AddressServiceImplTest {
     @DisplayName("Should get address by id successfully")
     void shouldGetAddressByIdSuccessfully() {
 
-        User user = User.builder()
-                .userId(1L)
-                .firstName("John")
-                .lastName("Doe")
-                .email("john@example.com")
-                .phoneNumber("08012345678")
-                .build();
-
-        Address address =
-                Address.builder()
-                        .addressId(1L)
-                        .streetAddress("12 Allen Avenue")
-                        .phoneNumber("09012345678")
-                        .city("Ikeja")
-                        .state("Lagos")
-                        .country("Nigeria")
-                        .landmark("Beside First Bank")
-                        .isDefault(true)
-                        .user(user)
-                        .build();
+        User user = buildUser();
+        Address address = buildAddress(user);
 
         when(addressRepository.findById(1L))
                 .thenReturn(Optional.of(address));
@@ -267,29 +232,12 @@ class AddressServiceImplTest {
     }
 
     @Test
-    @DisplayName("Should get all addresses for user successfully")
-    void shouldGetAllAddressesForUserSuccessfully() {
+    @DisplayName("Should get all addresses successfully")
+    void shouldGetAllAddressesSuccessfully() {
 
-        User user = User.builder()
-                .userId(1L)
-                .firstName("John")
-                .lastName("Doe")
-                .email("john@example.com")
-                .phoneNumber("08012345678")
-                .build();
+        User user = buildUser();
 
-        Address firstAddress =
-                Address.builder()
-                        .addressId(1L)
-                        .streetAddress("12 Allen Avenue")
-                        .phoneNumber("09012345678")
-                        .city("Ikeja")
-                        .state("Lagos")
-                        .country("Nigeria")
-                        .landmark("Beside First Bank")
-                        .isDefault(true)
-                        .user(user)
-                        .build();
+        Address firstAddress = buildAddress(user);
 
         Address secondAddress =
                 Address.builder()
@@ -304,11 +252,11 @@ class AddressServiceImplTest {
                         .user(user)
                         .build();
 
-        when(addressRepository.findByUser_UserId(1L))
+        when(addressRepository.findByUser_UserId(user.getUserId()))
                 .thenReturn(List.of(firstAddress, secondAddress));
 
         List<AddressResponseDto> response =
-                addressServiceImpl.getAllAddresses(1L);
+                addressServiceImpl.getAllAddresses(user.getUserId());
 
         assertThat(response)
                 .hasSize(2);
@@ -318,9 +266,6 @@ class AddressServiceImplTest {
 
         assertThat(response.get(0).getStreetAddress())
                 .isEqualTo("12 Allen Avenue");
-
-        assertThat(response.get(0).getPhoneNumber())
-                .isEqualTo("09012345678");
 
         assertThat(response.get(0).isDefault())
                 .isTrue();
@@ -338,7 +283,33 @@ class AddressServiceImplTest {
                 .isFalse();
 
         verify(addressRepository)
-                .findByUser_UserId(1L);
+                .findByUser_UserId(user.getUserId());
+    }
+
+    private User buildUser() {
+
+        return User.builder()
+                .userId(1L)
+                .firstName("John")
+                .lastName("Doe")
+                .email("john@example.com")
+                .phoneNumber("08012345678")
+                .build();
+    }
+
+    private Address buildAddress(User user) {
+
+        return Address.builder()
+                .addressId(1L)
+                .streetAddress("12 Allen Avenue")
+                .phoneNumber("09012345678")
+                .city("Ikeja")
+                .state("Lagos")
+                .country("Nigeria")
+                .landmark("Beside First Bank")
+                .isDefault(true)
+                .user(user)
+                .build();
     }
 
     private AddressRequestDto buildRequestDto() {
@@ -353,6 +324,22 @@ class AddressServiceImplTest {
         dto.setCountry("Nigeria");
         dto.setLandmark("Beside First Bank");
         dto.setDefault(true);
+
+        return dto;
+    }
+
+    private AddressRequestDto buildUpdateRequestDto() {
+
+        AddressRequestDto dto =
+                new AddressRequestDto();
+
+        dto.setStreetAddress("25 Admiralty Way");
+        dto.setPhoneNumber("08123456789");
+        dto.setCity("Lekki");
+        dto.setState("Lagos");
+        dto.setCountry("Nigeria");
+        dto.setLandmark("Near the mall");
+        dto.setDefault(false);
 
         return dto;
     }

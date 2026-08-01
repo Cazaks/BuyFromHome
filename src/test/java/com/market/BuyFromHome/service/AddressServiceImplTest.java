@@ -127,6 +127,144 @@ class AddressServiceImplTest {
                 .save(any(Address.class));
     }
 
+    @Test
+    @DisplayName("Should throw exception when address already exists")
+    void shouldThrowExceptionWhenAddressAlreadyExists() {
+
+        User user = User.builder()
+                .userId(1L)
+                .firstName("John")
+                .lastName("Doe")
+                .email("john@example.com")
+                .phoneNumber("08012345678")
+                .build();
+
+        AddressRequestDto requestDto =
+                buildRequestDto();
+
+        when(userRepository.findById(1L))
+                .thenReturn(Optional.of(user));
+
+        when(addressRepository
+                .existsByUser_UserIdAndStreetAddressIgnoreCaseAndCityIgnoreCaseAndStateIgnoreCaseAndCountryIgnoreCase(
+                        1L,
+                        requestDto.getStreetAddress(),
+                        requestDto.getCity(),
+                        requestDto.getState(),
+                        requestDto.getCountry()
+                ))
+                .thenReturn(true);
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> addressServiceImpl.createAddress(1L, requestDto)
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Address already exists.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        verify(userRepository)
+                .findById(1L);
+
+        verify(addressRepository)
+                .existsByUser_UserIdAndStreetAddressIgnoreCaseAndCityIgnoreCaseAndStateIgnoreCaseAndCountryIgnoreCase(
+                        1L,
+                        requestDto.getStreetAddress(),
+                        requestDto.getCity(),
+                        requestDto.getState(),
+                        requestDto.getCountry()
+                );
+
+        verify(addressRepository, never())
+                .save(any(Address.class));
+    }
+
+    @Test
+    @DisplayName("Should get address by id successfully")
+    void shouldGetAddressByIdSuccessfully() {
+
+        User user = User.builder()
+                .userId(1L)
+                .firstName("John")
+                .lastName("Doe")
+                .email("john@example.com")
+                .phoneNumber("08012345678")
+                .build();
+
+        Address address =
+                Address.builder()
+                        .addressId(1L)
+                        .streetAddress("12 Allen Avenue")
+                        .phoneNumber("09012345678")
+                        .city("Ikeja")
+                        .state("Lagos")
+                        .country("Nigeria")
+                        .landmark("Beside First Bank")
+                        .isDefault(true)
+                        .user(user)
+                        .build();
+
+        when(addressRepository.findById(1L))
+                .thenReturn(Optional.of(address));
+
+        AddressResponseDto response =
+                addressServiceImpl.getAddressById(1L);
+
+        assertThat(response).isNotNull();
+
+        assertThat(response.getId())
+                .isEqualTo(1L);
+
+        assertThat(response.getStreetAddress())
+                .isEqualTo("12 Allen Avenue");
+
+        assertThat(response.getPhoneNumber())
+                .isEqualTo("09012345678");
+
+        assertThat(response.getCity())
+                .isEqualTo("Ikeja");
+
+        assertThat(response.getState())
+                .isEqualTo("Lagos");
+
+        assertThat(response.getCountry())
+                .isEqualTo("Nigeria");
+
+        assertThat(response.getLandmark())
+                .isEqualTo("Beside First Bank");
+
+        assertThat(response.isDefault())
+                .isTrue();
+
+        verify(addressRepository)
+                .findById(1L);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when address does not exist")
+    void shouldThrowExceptionWhenAddressDoesNotExist() {
+
+        when(addressRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> addressServiceImpl.getAddressById(1L)
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Address not found.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(addressRepository)
+                .findById(1L);
+    }
+
     private AddressRequestDto buildRequestDto() {
 
         AddressRequestDto dto =

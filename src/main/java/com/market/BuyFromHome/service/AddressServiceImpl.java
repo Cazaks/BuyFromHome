@@ -48,6 +48,30 @@ public class AddressServiceImpl implements AddressService{
             );
         }
 
+        List<Address> existingAddresses =
+                addressRepository.findByUser_UserId(userId);
+
+        if (existingAddresses.isEmpty()
+                && !requestDto.isDefault()) {
+
+            throw new AppException(
+                    "First address must be set as default.",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        if (!existingAddresses.isEmpty()
+                && requestDto.isDefault()
+                && existingAddresses.stream()
+                .anyMatch(Address::isDefault)) {
+
+            throw new AppException(
+                    "User already has a default address.",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+
         Address address = Address.builder()
                 .streetAddress(requestDto.getStreetAddress())
                 .phoneNumber(requestDto.getPhoneNumber())

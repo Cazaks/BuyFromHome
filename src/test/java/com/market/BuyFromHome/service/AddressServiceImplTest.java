@@ -194,6 +194,171 @@ class AddressServiceImplTest {
     }
 
     @Test
+    @DisplayName("Should throw exception when first address is not set as default")
+    void shouldThrowExceptionWhenFirstAddressIsNotDefault() {
+
+        User user = buildUser();
+
+        AddressRequestDto requestDto = buildRequestDto();
+        requestDto.setDefault(false);
+
+        when(userRepository.findById(user.getUserId()))
+                .thenReturn(Optional.of(user));
+
+        when(addressRepository
+                .existsByUser_UserIdAndStreetAddressIgnoreCaseAndCityIgnoreCaseAndStateIgnoreCaseAndCountryIgnoreCase(
+                        user.getUserId(),
+                        requestDto.getStreetAddress(),
+                        requestDto.getCity(),
+                        requestDto.getState(),
+                        requestDto.getCountry()
+                ))
+                .thenReturn(false);
+
+        when(addressRepository.findByUser_UserId(user.getUserId()))
+                .thenReturn(List.of());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> addressServiceImpl.createAddress(
+                        user.getUserId(),
+                        requestDto
+                )
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("First address must be set as default.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        verify(addressRepository)
+                .findByUser_UserId(user.getUserId());
+
+        verify(addressRepository, never())
+                .save(any(Address.class));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when creating another default address")
+    void shouldThrowExceptionWhenCreatingAnotherDefaultAddress() {
+
+        User user = buildUser();
+
+        Address existingDefaultAddress =
+                buildAddress(user);
+
+        AddressRequestDto requestDto =
+                buildRequestDto();
+
+        requestDto.setStreetAddress("13 Yaba Street");
+        requestDto.setCity("Lagos");
+        requestDto.setDefault(true);
+
+        when(userRepository.findById(user.getUserId()))
+                .thenReturn(Optional.of(user));
+
+        when(addressRepository
+                .existsByUser_UserIdAndStreetAddressIgnoreCaseAndCityIgnoreCaseAndStateIgnoreCaseAndCountryIgnoreCase(
+                        user.getUserId(),
+                        requestDto.getStreetAddress(),
+                        requestDto.getCity(),
+                        requestDto.getState(),
+                        requestDto.getCountry()
+                ))
+                .thenReturn(false);
+
+        when(addressRepository.findByUser_UserId(user.getUserId()))
+                .thenReturn(List.of(existingDefaultAddress));
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> addressServiceImpl.createAddress(
+                        user.getUserId(),
+                        requestDto
+                )
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("User already has a default address.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        verify(addressRepository)
+                .findByUser_UserId(user.getUserId());
+
+        verify(addressRepository, never())
+                .save(any(Address.class));
+    }
+
+    @Test
+    @DisplayName("Should create additional address as non-default")
+    void shouldCreateAdditionalAddressAsNonDefault() {
+
+        User user = buildUser();
+
+        Address existingDefaultAddress =
+                buildAddress(user);
+
+        AddressRequestDto requestDto =
+                buildRequestDto();
+
+        requestDto.setStreetAddress("13 Yaba Street");
+        requestDto.setCity("Lagos");
+        requestDto.setDefault(false);
+
+        when(userRepository.findById(user.getUserId()))
+                .thenReturn(Optional.of(user));
+
+        when(addressRepository
+                .existsByUser_UserIdAndStreetAddressIgnoreCaseAndCityIgnoreCaseAndStateIgnoreCaseAndCountryIgnoreCase(
+                        user.getUserId(),
+                        requestDto.getStreetAddress(),
+                        requestDto.getCity(),
+                        requestDto.getState(),
+                        requestDto.getCountry()
+                ))
+                .thenReturn(false);
+
+        when(addressRepository.findByUser_UserId(user.getUserId()))
+                .thenReturn(List.of(existingDefaultAddress));
+
+        when(addressRepository.save(any(Address.class)))
+                .thenAnswer(invocation -> {
+                    Address address = invocation.getArgument(0);
+                    address.setAddressId(2L);
+                    return address;
+                });
+
+        AddressResponseDto response =
+                addressServiceImpl.createAddress(
+                        user.getUserId(),
+                        requestDto
+                );
+
+        assertThat(response).isNotNull();
+
+        assertThat(response.getId())
+                .isEqualTo(2L);
+
+        assertThat(response.getStreetAddress())
+                .isEqualTo("13 Yaba Street");
+
+        assertThat(response.isDefault())
+                .isFalse();
+
+        assertThat(existingDefaultAddress.isDefault())
+                .isTrue();
+
+        verify(addressRepository)
+                .findByUser_UserId(user.getUserId());
+
+        verify(addressRepository)
+                .save(any(Address.class));
+    }
+
+    @Test
     @DisplayName("Should get address by id successfully")
     void shouldGetAddressByIdSuccessfully() {
 

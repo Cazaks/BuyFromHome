@@ -40,16 +40,31 @@ class AddressServiceImplTest {
     void shouldCreateAddressSuccessfully() {
 
         User user = buildUser();
-        AddressRequestDto requestDto = buildRequestDto();
+
+        AddressRequestDto requestDto =
+                buildRequestDto();
 
         when(userRepository.findById(user.getUserId()))
                 .thenReturn(Optional.of(user));
 
+        when(addressRepository
+                .existsByUser_UserIdAndStreetAddressIgnoreCaseAndCityIgnoreCaseAndStateIgnoreCaseAndCountryIgnoreCase(
+                        user.getUserId(),
+                        requestDto.getStreetAddress(),
+                        requestDto.getCity(),
+                        requestDto.getState(),
+                        requestDto.getCountry()
+                ))
+                .thenReturn(false);
+
         when(addressRepository.save(any(Address.class)))
                 .thenAnswer(invocation -> {
-                    Address address = invocation.getArgument(0);
+                    Address address =
+                            invocation.getArgument(0);
+
                     address.setAddressId(1L);
                     address.setUser(user);
+
                     return address;
                 });
 
@@ -84,6 +99,18 @@ class AddressServiceImplTest {
 
         assertThat(response.isDefault())
                 .isTrue();
+
+        verify(userRepository)
+                .findById(user.getUserId());
+
+        verify(addressRepository)
+                .existsByUser_UserIdAndStreetAddressIgnoreCaseAndCityIgnoreCaseAndStateIgnoreCaseAndCountryIgnoreCase(
+                        user.getUserId(),
+                        requestDto.getStreetAddress(),
+                        requestDto.getCity(),
+                        requestDto.getState(),
+                        requestDto.getCountry()
+                );
 
         verify(addressRepository)
                 .save(any(Address.class));

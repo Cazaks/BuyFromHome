@@ -609,15 +609,6 @@ class CartServiceImplTest {
                 .save(any(CartItem.class));
     }
 
-
-    private User buildUser() {
-
-        return User.builder()
-                .userId(1L)
-                .build();
-    }
-
-
     @Test
     @DisplayName("Should update cart item quantity successfully")
     void shouldUpdateCartItemQuantitySuccessfully() {
@@ -760,16 +751,6 @@ class CartServiceImplTest {
                 .save(any(CartItem.class));
     }
 
-    private Cart buildCart(User user) {
-
-        return Cart.builder()
-                .cartId(1L)
-                .user(user)
-                .status(CartStatus.ACTIVE)
-                .items(new ArrayList<>())
-                .build();
-    }
-
     @Test
     @DisplayName("Should throw exception when selling measurement is disabled while updating quantity")
     void shouldThrowExceptionWhenSellingMeasurementIsDisabledWhileUpdatingQuantity() {
@@ -900,6 +881,22 @@ class CartServiceImplTest {
                 .save(any(CartItem.class));
     }
 
+    private User buildUser() {
+
+        return User.builder()
+                .userId(1L)
+                .build();
+    }
+
+    private Cart buildCart(User user) {
+
+        return Cart.builder()
+                .cartId(1L)
+                .user(user)
+                .status(CartStatus.ACTIVE)
+                .items(new ArrayList<>())
+                .build();
+    }
 
     private ProductSellingMeasurement buildSellingMeasurement() {
 

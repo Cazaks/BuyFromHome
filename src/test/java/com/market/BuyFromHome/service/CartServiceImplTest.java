@@ -617,6 +617,149 @@ class CartServiceImplTest {
                 .build();
     }
 
+
+    @Test
+    @DisplayName("Should update cart item quantity successfully")
+    void shouldUpdateCartItemQuantitySuccessfully() {
+
+        User user = buildUser();
+        Cart cart = buildCart(user);
+
+        ProductSellingMeasurement sellingMeasurement =
+                buildSellingMeasurement();
+
+        CartItem cartItem =
+                CartItem.builder()
+                        .cartItemId(1L)
+                        .cart(cart)
+                        .sellingMeasurement(sellingMeasurement)
+                        .quantity(2)
+                        .priceAtTimeOfAdding(
+                                sellingMeasurement.getSellingPrice()
+                        )
+                        .build();
+
+        cart.getItems().add(cartItem);
+
+        when(cartRepository.findByUser_UserId(user.getUserId()))
+                .thenReturn(Optional.of(cart));
+
+        when(cartItemRepository.findByCart_CartIdAndCartItemId(
+                cart.getCartId(),
+                cartItem.getCartItemId()
+        ))
+                .thenReturn(Optional.of(cartItem));
+
+        when(cartItemRepository.save(any(CartItem.class)))
+                .thenAnswer(invocation ->
+                        invocation.getArgument(0));
+
+        CartResponseDto response =
+                cartServiceImpl.updateItemQuantity(
+                        user.getUserId(),
+                        cartItem.getCartItemId(),
+                        5
+                );
+
+        assertThat(response).isNotNull();
+
+        assertThat(cartItem.getQuantity())
+                .isEqualTo(5);
+
+        assertThat(response.getItems())
+                .hasSize(1);
+
+        assertThat(response.getItems().get(0).getQuantity())
+                .isEqualTo(5);
+
+        verify(cartRepository)
+                .findByUser_UserId(user.getUserId());
+
+        verify(cartItemRepository)
+                .findByCart_CartIdAndCartItemId(
+                        cart.getCartId(),
+                        cartItem.getCartItemId()
+                );
+
+        verify(cartItemRepository)
+                .save(cartItem);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when cart does not exist while updating item quantity")
+    void shouldThrowExceptionWhenCartDoesNotExistWhileUpdatingItemQuantity() {
+
+        User user = buildUser();
+
+        when(cartRepository.findByUser_UserId(user.getUserId()))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> cartServiceImpl.updateItemQuantity(
+                        user.getUserId(),
+                        1L,
+                        5
+                )
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Cart not found.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(cartRepository)
+                .findByUser_UserId(user.getUserId());
+
+        verifyNoInteractions(cartItemRepository);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when cart item does not exist in user's cart")
+    void shouldThrowExceptionWhenCartItemDoesNotExistInUsersCart() {
+
+        User user = buildUser();
+
+        Cart cart = buildCart(user);
+
+        when(cartRepository.findByUser_UserId(user.getUserId()))
+                .thenReturn(Optional.of(cart));
+
+        when(cartItemRepository.findByCart_CartIdAndCartItemId(
+                cart.getCartId(),
+                1L
+        ))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> cartServiceImpl.updateItemQuantity(
+                        user.getUserId(),
+                        1L,
+                        5
+                )
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Cart item not found.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(cartRepository)
+                .findByUser_UserId(user.getUserId());
+
+        verify(cartItemRepository)
+                .findByCart_CartIdAndCartItemId(
+                        cart.getCartId(),
+                        1L
+                );
+
+        verify(cartItemRepository, never())
+                .save(any(CartItem.class));
+    }
+
     private Cart buildCart(User user) {
 
         return Cart.builder()
@@ -626,6 +769,137 @@ class CartServiceImplTest {
                 .items(new ArrayList<>())
                 .build();
     }
+
+    @Test
+    @DisplayName("Should throw exception when selling measurement is disabled while updating quantity")
+    void shouldThrowExceptionWhenSellingMeasurementIsDisabledWhileUpdatingQuantity() {
+
+        User user = buildUser();
+
+        Cart cart = buildCart(user);
+
+        ProductSellingMeasurement sellingMeasurement =
+                buildSellingMeasurement();
+
+        sellingMeasurement.setEnabled(false);
+
+        CartItem cartItem =
+                CartItem.builder()
+                        .cart(cart)
+                        .sellingMeasurement(sellingMeasurement)
+                        .quantity(2)
+                        .priceAtTimeOfAdding(
+                                sellingMeasurement.getSellingPrice()
+                        )
+                        .build();
+
+        cart.getItems().add(cartItem);
+
+        when(cartRepository.findByUser_UserId(user.getUserId()))
+                .thenReturn(Optional.of(cart));
+
+        when(cartItemRepository.findByCart_CartIdAndCartItemId(
+                cart.getCartId(),
+                cartItem.getCartItemId()
+        ))
+                .thenReturn(Optional.of(cartItem));
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> cartServiceImpl.updateItemQuantity(
+                        user.getUserId(),
+                        cartItem.getCartItemId(),
+                        5
+                )
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Selling measurement is disabled.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        assertThat(cartItem.getQuantity())
+                .isEqualTo(2);
+
+        verify(cartRepository)
+                .findByUser_UserId(user.getUserId());
+
+        verify(cartItemRepository)
+                .findByCart_CartIdAndCartItemId(
+                        cart.getCartId(),
+                        cartItem.getCartItemId()
+                );
+
+        verify(cartItemRepository, never())
+                .save(any(CartItem.class));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when updated quantity exceeds available stock")
+    void shouldThrowExceptionWhenUpdatedQuantityExceedsAvailableStock() {
+
+        User user = buildUser();
+
+        Cart cart = buildCart(user);
+
+        ProductSellingMeasurement sellingMeasurement =
+                buildSellingMeasurement();
+
+        sellingMeasurement.setQuantityInStock(5);
+
+        CartItem cartItem =
+                CartItem.builder()
+                        .cart(cart)
+                        .sellingMeasurement(sellingMeasurement)
+                        .quantity(2)
+                        .priceAtTimeOfAdding(
+                                sellingMeasurement.getSellingPrice()
+                        )
+                        .build();
+
+        cart.getItems().add(cartItem);
+
+        when(cartRepository.findByUser_UserId(user.getUserId()))
+                .thenReturn(Optional.of(cart));
+
+        when(cartItemRepository.findByCart_CartIdAndCartItemId(
+                cart.getCartId(),
+                cartItem.getCartItemId()
+        ))
+                .thenReturn(Optional.of(cartItem));
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> cartServiceImpl.updateItemQuantity(
+                        user.getUserId(),
+                        cartItem.getCartItemId(),
+                        6
+                )
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Insufficient stock.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        assertThat(cartItem.getQuantity())
+                .isEqualTo(2);
+
+        verify(cartRepository)
+                .findByUser_UserId(user.getUserId());
+
+        verify(cartItemRepository)
+                .findByCart_CartIdAndCartItemId(
+                        cart.getCartId(),
+                        cartItem.getCartItemId()
+                );
+
+        verify(cartItemRepository, never())
+                .save(any(CartItem.class));
+    }
+
 
     private ProductSellingMeasurement buildSellingMeasurement() {
 

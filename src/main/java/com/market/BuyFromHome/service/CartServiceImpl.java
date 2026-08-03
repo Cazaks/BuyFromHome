@@ -143,6 +143,57 @@ public class CartServiceImpl implements CartService{
         return mapToResponse(cart);
     }
 
+    @Transactional
+    @Override
+    public CartResponseDto updateItemQuantity(
+            Long userId,
+            Long cartItemId,
+            int quantity) {
+
+        Cart cart =
+                cartRepository.findByUser_UserId(userId)
+                        .orElseThrow(() ->
+                                new AppException(
+                                        "Cart not found.",
+                                        HttpStatus.NOT_FOUND
+                                ));
+
+        CartItem cartItem =
+                cartItemRepository
+                        .findByCart_CartIdAndCartItemId(
+                                cart.getCartId(),
+                                cartItemId
+                        )
+                        .orElseThrow(() ->
+                                new AppException(
+                                        "Cart item not found.",
+                                        HttpStatus.NOT_FOUND
+                                ));
+
+        ProductSellingMeasurement sellingMeasurement =
+                cartItem.getSellingMeasurement();
+
+        if (!sellingMeasurement.isEnabled()) {
+            throw new AppException(
+                    "Selling measurement is disabled.",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        if (quantity > sellingMeasurement.getQuantityInStock()) {
+            throw new AppException(
+                    "Insufficient stock.",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        cartItem.setQuantity(quantity);
+
+        cartItemRepository.save(cartItem);
+
+        return mapToResponse(cart);
+    }
+
 
     private CartResponseDto mapToResponse(Cart cart) {
 

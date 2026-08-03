@@ -1,4 +1,5 @@
 package com.market.BuyFromHome.repository;
+
 import com.market.BuyFromHome.model.CartItem;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -9,5 +10,10 @@ public interface CartItemRepository extends JpaRepository<CartItem, Long> {
     Optional<CartItem> findByCart_CartIdAndSellingMeasurement_SellingMeasurementId(
             Long cartId,
             Long sellingMeasurementId
+    );
+
+    Optional<CartItem> findByCart_CartIdAndCartItemId(
+            Long cartId,
+            Long cartItemId
     );
 }

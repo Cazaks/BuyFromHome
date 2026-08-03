@@ -195,6 +195,40 @@ public class CartServiceImpl implements CartService{
     }
 
 
+    @Transactional
+    @Override
+    public CartResponseDto removeItem(
+            Long userId,
+            Long cartItemId) {
+
+        Cart cart =
+                cartRepository.findByUser_UserId(userId)
+                        .orElseThrow(() ->
+                                new AppException(
+                                        "Cart not found.",
+                                        HttpStatus.NOT_FOUND
+                                ));
+
+        CartItem cartItem =
+                cartItemRepository
+                        .findByCart_CartIdAndCartItemId(
+                                cart.getCartId(),
+                                cartItemId
+                        )
+                        .orElseThrow(() ->
+                                new AppException(
+                                        "Cart item not found.",
+                                        HttpStatus.NOT_FOUND
+                                ));
+
+        cart.getItems().remove(cartItem);
+
+        cartItemRepository.delete(cartItem);
+
+        return mapToResponse(cart);
+    }
+
+
     private CartResponseDto mapToResponse(Cart cart) {
 
         List<CartItemResponseDto> items =

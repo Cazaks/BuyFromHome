@@ -12,4 +12,15 @@ public interface CartService {
     CartResponseDto addItem(
             Long userId,
             CartItemRequestDto requestDto);
+
+    @Transactional
+    CartResponseDto updateItemQuantity(
+            Long userId,
+            Long cartItemId,
+            int quantity);
+
+    @Transactional
+    CartResponseDto removeItem(
+            Long userId,
+            Long cartItemId);
 }

@@ -881,6 +881,144 @@ class CartServiceImplTest {
                 .save(any(CartItem.class));
     }
 
+
+    @Test
+    @DisplayName("Should remove cart item successfully")
+    void shouldRemoveCartItemSuccessfully() {
+
+        User user = buildUser();
+
+        Cart cart = buildCart(user);
+
+        ProductSellingMeasurement sellingMeasurement =
+                buildSellingMeasurement();
+
+        CartItem cartItem =
+                CartItem.builder()
+                        .cart(cart)
+                        .sellingMeasurement(sellingMeasurement)
+                        .quantity(2)
+                        .priceAtTimeOfAdding(
+                                sellingMeasurement.getSellingPrice()
+                        )
+                        .build();
+
+        cart.getItems().add(cartItem);
+
+        when(cartRepository.findByUser_UserId(user.getUserId()))
+                .thenReturn(Optional.of(cart));
+
+        when(cartItemRepository.findByCart_CartIdAndCartItemId(
+                cart.getCartId(),
+                cartItem.getCartItemId()
+        ))
+                .thenReturn(Optional.of(cartItem));
+
+        CartResponseDto response =
+                cartServiceImpl.removeItem(
+                        user.getUserId(),
+                        cartItem.getCartItemId()
+                );
+
+        assertThat(response).isNotNull();
+
+        assertThat(cart.getItems())
+                .isEmpty();
+
+        assertThat(response.getItems())
+                .isEmpty();
+
+        assertThat(response.getTotalAmount())
+                .isEqualByComparingTo(BigDecimal.ZERO);
+
+        verify(cartRepository)
+                .findByUser_UserId(user.getUserId());
+
+        verify(cartItemRepository)
+                .findByCart_CartIdAndCartItemId(
+                        cart.getCartId(),
+                        cartItem.getCartItemId()
+                );
+
+        verify(cartItemRepository)
+                .delete(cartItem);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when cart does not exist while removing item")
+    void shouldThrowExceptionWhenCartDoesNotExistWhileRemovingItem() {
+
+        User user = buildUser();
+
+        when(cartRepository.findByUser_UserId(user.getUserId()))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> cartServiceImpl.removeItem(
+                        user.getUserId(),
+                        1L
+                )
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Cart not found.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(cartRepository)
+                .findByUser_UserId(user.getUserId());
+
+        verifyNoInteractions(cartItemRepository);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when cart item does not exist while removing item")
+    void shouldThrowExceptionWhenCartItemDoesNotExistWhileRemovingItem() {
+
+        User user = buildUser();
+
+        Cart cart = buildCart(user);
+
+        when(cartRepository.findByUser_UserId(user.getUserId()))
+                .thenReturn(Optional.of(cart));
+
+        when(cartItemRepository.findByCart_CartIdAndCartItemId(
+                cart.getCartId(),
+                1L
+        ))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> cartServiceImpl.removeItem(
+                        user.getUserId(),
+                        1L
+                )
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Cart item not found.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(cartRepository)
+                .findByUser_UserId(user.getUserId());
+
+        verify(cartItemRepository)
+                .findByCart_CartIdAndCartItemId(
+                        cart.getCartId(),
+                        1L
+                );
+
+        verify(cartItemRepository, never())
+                .delete(any(CartItem.class));
+    }
+
+
+
     private User buildUser() {
 
         return User.builder()

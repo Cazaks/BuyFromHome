@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -1015,6 +1016,133 @@ class CartServiceImplTest {
 
         verify(cartItemRepository, never())
                 .delete(any(CartItem.class));
+    }
+
+    @Test
+    @DisplayName("Should clear cart items successfully")
+    void shouldClearCartItemsSuccessfully() {
+
+        User user = buildUser();
+
+        Cart cart = buildCart(user);
+
+        ProductSellingMeasurement sellingMeasurement =
+                buildSellingMeasurement();
+
+        CartItem firstItem =
+                CartItem.builder()
+                        .cart(cart)
+                        .sellingMeasurement(sellingMeasurement)
+                        .quantity(2)
+                        .priceAtTimeOfAdding(
+                                sellingMeasurement.getSellingPrice()
+                        )
+                        .build();
+
+        CartItem secondItem =
+                CartItem.builder()
+                        .cart(cart)
+                        .sellingMeasurement(sellingMeasurement)
+                        .quantity(1)
+                        .priceAtTimeOfAdding(
+                                sellingMeasurement.getSellingPrice()
+                        )
+                        .build();
+
+        cart.getItems().add(firstItem);
+        cart.getItems().add(secondItem);
+
+        List<CartItem> existingItems =
+                new ArrayList<>(cart.getItems());
+
+        when(cartRepository.findByUser_UserId(user.getUserId()))
+                .thenReturn(Optional.of(cart));
+
+        CartResponseDto response =
+                cartServiceImpl.clearCart(
+                        user.getUserId()
+                );
+
+        assertThat(response).isNotNull();
+
+        assertThat(cart.getItems())
+                .isEmpty();
+
+        assertThat(response.getItems())
+                .isEmpty();
+
+        assertThat(response.getTotalAmount())
+                .isEqualByComparingTo(BigDecimal.ZERO);
+
+        assertThat(response.getStatus())
+                .isEqualTo(CartStatus.ACTIVE);
+
+        verify(cartRepository)
+                .findByUser_UserId(user.getUserId());
+
+        verify(cartItemRepository)
+                .deleteAll(existingItems);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when cart does not exist while clearing cart")
+    void shouldThrowExceptionWhenCartDoesNotExistWhileClearingCart() {
+
+        User user = buildUser();
+
+        when(cartRepository.findByUser_UserId(user.getUserId()))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> cartServiceImpl.clearCart(user.getUserId())
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Cart not found.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(cartRepository)
+                .findByUser_UserId(user.getUserId());
+
+        verifyNoInteractions(cartItemRepository);
+    }
+
+    @Test
+    @DisplayName("Should safely clear an already empty cart")
+    void shouldSafelyClearAnAlreadyEmptyCart() {
+
+        User user = buildUser();
+
+        Cart cart = buildCart(user);
+
+        when(cartRepository.findByUser_UserId(user.getUserId()))
+                .thenReturn(Optional.of(cart));
+
+        CartResponseDto response =
+                cartServiceImpl.clearCart(user.getUserId());
+
+        assertThat(response).isNotNull();
+
+        assertThat(cart.getItems())
+                .isEmpty();
+
+        assertThat(response.getItems())
+                .isEmpty();
+
+        assertThat(response.getTotalAmount())
+                .isEqualByComparingTo(BigDecimal.ZERO);
+
+        assertThat(response.getStatus())
+                .isEqualTo(CartStatus.ACTIVE);
+
+        verify(cartRepository)
+                .findByUser_UserId(user.getUserId());
+
+        verify(cartItemRepository)
+                .deleteAll(anyList());
     }
 
 

@@ -784,7 +784,7 @@ class ProductOptionServiceImplTest {
         verify(productOptionRepository, never()).save(any());
     }
 
-    private ProductOptionRequestDto buildRequestDto(
+   private ProductOptionRequestDto buildRequestDto(
             String productVariety,
             String productSpecification) {
 

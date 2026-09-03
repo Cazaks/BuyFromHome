@@ -45,8 +45,8 @@ public class SecurityConfig {
                                 "/v3/api-docs.yaml"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET,
-                                "/api/categories/**",
-                                "/api/products/**"
+                                "/api/v1/categories/**",
+                                "/api/v1/products/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

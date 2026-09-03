@@ -42,6 +42,7 @@ public class ProductServiceImpl implements ProductService{
         Product product = Product.builder()
                 .productName(requestDto.getProductName())
                 .productDescription(requestDto.getProductDescription())
+                .imageUrl(requestDto.getImageUrl())
                 .category(category)
                 .enabled(true)
                 .build();
@@ -101,6 +102,7 @@ public class ProductServiceImpl implements ProductService{
 
         product.setProductName(requestDto.getProductName());
         product.setProductDescription(requestDto.getProductDescription());
+        product.setImageUrl(requestDto.getImageUrl());
         product.setCategory(category);
 
         Product updatedProduct = productRepository.save(product);
@@ -150,6 +152,7 @@ public class ProductServiceImpl implements ProductService{
                 .productId(product.getProductId())
                 .productName(product.getProductName())
                 .productDescription(product.getProductDescription())
+                .imageUrl(product.getImageUrl())
                 .productCategoryId(product.getCategory().getId())
                 .productCategoryName(product.getCategory().getName())
                 .enabled(product.isEnabled())

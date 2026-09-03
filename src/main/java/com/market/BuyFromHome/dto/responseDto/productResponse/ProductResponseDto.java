@@ -17,6 +17,8 @@ public class ProductResponseDto {
 
     private String productDescription;
 
+    private String imageUrl;
+
     private Long productCategoryId;
 
     private String productCategoryName;

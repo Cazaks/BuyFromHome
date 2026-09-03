@@ -18,6 +18,8 @@ public class ProductRequestDto {
     @Size(max = 3000, message = "Product description cannot exceed 3000 characters.")
     private String productDescription;
 
+    private String imageUrl;
+
     @NotNull(message = "Product category is required.")
     private Long productCategoryId;
 }

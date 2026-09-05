@@ -1,10 +1,11 @@
 package com.market.BuyFromHome.service;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+
+import java.time.LocalDateTime;
 import java.util.Optional;
-import com.market.BuyFromHome.dto.requestDto.userRequestDto.GoogleAuthRequest;
-import com.market.BuyFromHome.dto.requestDto.userRequestDto.UserLoginRequest;
-import com.market.BuyFromHome.dto.requestDto.userRequestDto.UserRegisterRequest;
+
+import com.market.BuyFromHome.dto.requestDto.userRequestDto.*;
 import com.market.BuyFromHome.dto.responseDto.userResposeDto.AuthResponseDto;
 import com.market.BuyFromHome.enums.AuthProvider;
 import com.market.BuyFromHome.enums.Role;
@@ -45,6 +46,9 @@ public class AuthenticationServiceImplTest {
 
     @Mock
     GoogleAuthService googleAuthService;
+
+    @Mock
+    EmailService emailService;
 
     // ==========================
     // LOCAL REGISTRATION TESTS
@@ -712,6 +716,235 @@ public class AuthenticationServiceImplTest {
         authenticationServiceImpl.googleLogin(request);
 
         verify(googleAuthService).verifyToken("mock-id-token");
+    }
+
+    // ==========================
+    // FORGOT PASSWORD TESTS
+    // ==========================
+
+    @Test
+    @DisplayName("Should generate reset token and send email successfully")
+    void forgotPasswordSuccessfully() {
+
+        User user = User.builder()
+                .email("caleb@test.com")
+                .provider(AuthProvider.LOCAL)
+                .role(Role.CUSTOMER)
+                .enabled(true)
+                .build();
+
+        ForgotPasswordRequest request = new ForgotPasswordRequest();
+        request.setEmail("caleb@test.com");
+
+        when(userRepository.findByEmail("caleb@test.com"))
+                .thenReturn(Optional.of(user));
+
+        authenticationServiceImpl.forgotPassword(request);
+
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(userCaptor.capture());
+
+        User savedUser = userCaptor.getValue();
+        assertThat(savedUser.getResetToken()).isNotNull();
+        assertThat(savedUser.getResetTokenExpiry()).isAfter(LocalDateTime.now());
+
+        verify(emailService).sendPasswordResetEmail(eq("caleb@test.com"), anyString());
+    }
+
+    @Test
+    @DisplayName("Should throw exception when forgot password email does not exist")
+    void throwForgotPasswordEmailNotFound() {
+
+        ForgotPasswordRequest request = new ForgotPasswordRequest();
+        request.setEmail("missing@test.com");
+
+        when(userRepository.findByEmail("missing@test.com"))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                authenticationServiceImpl.forgotPassword(request))
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("No account found")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verifyNoInteractions(emailService);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when forgot password used on Google account")
+    void throwForgotPasswordGoogleAccount() {
+
+        User user = User.builder()
+                .email("caleb@test.com")
+                .provider(AuthProvider.GOOGLE)
+                .role(Role.CUSTOMER)
+                .enabled(true)
+                .build();
+
+        ForgotPasswordRequest request = new ForgotPasswordRequest();
+        request.setEmail("caleb@test.com");
+
+        when(userRepository.findByEmail("caleb@test.com"))
+                .thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() ->
+                authenticationServiceImpl.forgotPassword(request))
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Google sign-in")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        verify(userRepository, never()).save(any());
+        verifyNoInteractions(emailService);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when forgot password used on disabled account")
+    void throwForgotPasswordDisabledAccount() {
+
+        User user = User.builder()
+                .email("caleb@test.com")
+                .provider(AuthProvider.LOCAL)
+                .role(Role.CUSTOMER)
+                .enabled(false)
+                .build();
+
+        ForgotPasswordRequest request = new ForgotPasswordRequest();
+        request.setEmail("caleb@test.com");
+
+        when(userRepository.findByEmail("caleb@test.com"))
+                .thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() ->
+                authenticationServiceImpl.forgotPassword(request))
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Account is disabled")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+
+        verify(userRepository, never()).save(any());
+        verifyNoInteractions(emailService);
+    }
+
+    // ==========================
+    // RESET PASSWORD TESTS
+    // ==========================
+
+    @Test
+    @DisplayName("Should reset password successfully with valid token")
+    void resetPasswordSuccessfully() {
+
+        User user = User.builder()
+                .email("caleb@test.com")
+                .password("oldHashedPassword")
+                .provider(AuthProvider.LOCAL)
+                .role(Role.CUSTOMER)
+                .enabled(true)
+                .resetToken("valid-token")
+                .resetTokenExpiry(LocalDateTime.now().plusMinutes(10))
+                .build();
+
+        ResetPasswordRequest request = new ResetPasswordRequest();
+        request.setToken("valid-token");
+        request.setNewPassword("NewPass1@23");
+
+        when(userRepository.findByResetToken("valid-token"))
+                .thenReturn(Optional.of(user));
+
+        when(passwordEncoder.encode("NewPass1@23"))
+                .thenReturn("newHashedPassword");
+
+        authenticationServiceImpl.resetPassword(request);
+
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(userCaptor.capture());
+
+        User savedUser = userCaptor.getValue();
+        assertThat(savedUser.getPassword()).isEqualTo("newHashedPassword");
+        assertThat(savedUser.getResetToken()).isNull();
+        assertThat(savedUser.getResetTokenExpiry()).isNull();
+    }
+
+    @Test
+    @DisplayName("Should throw exception when reset token does not exist")
+    void throwResetPasswordTokenNotFound() {
+
+        ResetPasswordRequest request = new ResetPasswordRequest();
+        request.setToken("invalid-token");
+        request.setNewPassword("NewPass1@23");
+
+        when(userRepository.findByResetToken("invalid-token"))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                authenticationServiceImpl.resetPassword(request))
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Invalid or expired")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should throw exception when reset token is expired")
+    void throwResetPasswordTokenExpired() {
+
+        User user = User.builder()
+                .email("caleb@test.com")
+                .provider(AuthProvider.LOCAL)
+                .role(Role.CUSTOMER)
+                .enabled(true)
+                .resetToken("expired-token")
+                .resetTokenExpiry(LocalDateTime.now().minusMinutes(5))
+                .build();
+
+        ResetPasswordRequest request = new ResetPasswordRequest();
+        request.setToken("expired-token");
+        request.setNewPassword("NewPass1@23");
+
+        when(userRepository.findByResetToken("expired-token"))
+                .thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() ->
+                authenticationServiceImpl.resetPassword(request))
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Invalid or expired")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should throw exception when resetting password for disabled account")
+    void throwResetPasswordDisabledAccount() {
+
+        User user = User.builder()
+                .email("caleb@test.com")
+                .provider(AuthProvider.LOCAL)
+                .role(Role.CUSTOMER)
+                .enabled(false)
+                .resetToken("valid-token")
+                .resetTokenExpiry(LocalDateTime.now().plusMinutes(10))
+                .build();
+
+        ResetPasswordRequest request = new ResetPasswordRequest();
+        request.setToken("valid-token");
+        request.setNewPassword("NewPass1@23");
+
+        when(userRepository.findByResetToken("valid-token"))
+                .thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() ->
+                authenticationServiceImpl.resetPassword(request))
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Account is disabled")
+                .extracting(ex -> ((AppException) ex).getStatus())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+
+        verify(userRepository, never()).save(any());
     }
 
 }

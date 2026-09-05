@@ -184,7 +184,6 @@ public class AuthenticationServiceImpl implements AuthenticationService{
         return mapToAuthResponse(user, token);
     }
 
-
     @Transactional
     @Override
     public void forgotPassword(ForgotPasswordRequest requestDto) {
@@ -198,6 +197,13 @@ public class AuthenticationServiceImpl implements AuthenticationService{
             throw new AppException(
                     "This account uses Google sign-in. Password reset isn't available.",
                     HttpStatus.BAD_REQUEST
+            );
+        }
+
+        if (!user.isEnabled()) {
+            throw new AppException(
+                    "Account is disabled.",
+                    HttpStatus.FORBIDDEN
             );
         }
 
@@ -223,6 +229,13 @@ public class AuthenticationServiceImpl implements AuthenticationService{
             throw new AppException(
                     "Invalid or expired reset link.",
                     HttpStatus.BAD_REQUEST
+            );
+        }
+
+        if (!user.isEnabled()) {
+            throw new AppException(
+                    "Account is disabled.",
+                    HttpStatus.FORBIDDEN
             );
         }
 

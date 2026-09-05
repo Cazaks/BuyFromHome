@@ -1,8 +1,6 @@
 package com.market.BuyFromHome.controller;
 
-import com.market.BuyFromHome.dto.requestDto.userRequestDto.GoogleAuthRequest;
-import com.market.BuyFromHome.dto.requestDto.userRequestDto.UserLoginRequest;
-import com.market.BuyFromHome.dto.requestDto.userRequestDto.UserRegisterRequest;
+import com.market.BuyFromHome.dto.requestDto.userRequestDto.*;
 import com.market.BuyFromHome.dto.responseDto.userResposeDto.AuthResponseDto;
 import com.market.BuyFromHome.service.AuthenticationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -68,5 +66,19 @@ public class AuthenticationController {
             @Valid @RequestBody GoogleAuthRequest request) {
 
         return ResponseEntity.ok(authenticationService.googleLogin(request));
+    }
+
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Request a password reset email")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authenticationService.forgotPassword(request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Reset password using a valid reset token")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authenticationService.resetPassword(request);
+        return ResponseEntity.ok().build();
     }
 }

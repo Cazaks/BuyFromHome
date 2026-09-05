@@ -36,7 +36,7 @@ public class User extends BasicEntity {
     @Column
     private String googleId;
 
-    @Column(nullable = false)
+    @Column
     private String phoneNumber;
 
     @Enumerated(EnumType.STRING)

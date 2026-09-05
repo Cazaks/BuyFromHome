@@ -1,9 +1,9 @@
 package com.market.BuyFromHome.service;
 
-import com.market.BuyFromHome.dto.requestDto.userRequestDto.GoogleAuthRequest;
-import com.market.BuyFromHome.dto.requestDto.userRequestDto.UserLoginRequest;
-import com.market.BuyFromHome.dto.requestDto.userRequestDto.UserRegisterRequest;
+import com.google.common.base.Optional;
+import com.market.BuyFromHome.dto.requestDto.userRequestDto.*;
 import com.market.BuyFromHome.dto.responseDto.userResposeDto.AuthResponseDto;
+import com.market.BuyFromHome.model.User;
 import org.springframework.transaction.annotation.Transactional;
 
 public interface AuthenticationService {
@@ -18,4 +18,11 @@ public interface AuthenticationService {
     // ==========================
     @Transactional(readOnly = true)
     AuthResponseDto googleLogin(GoogleAuthRequest requestDto);
+
+    @Transactional
+    void forgotPassword(ForgotPasswordRequest requestDto);
+
+    @Transactional
+    void resetPassword(ResetPasswordRequest requestDto);
+
 }

@@ -50,6 +50,12 @@ public class User extends BasicEntity {
     @Column(nullable = false)
     private boolean enabled = true;
 
+    @Column
+    private String resetToken;
+
+    @Column
+    private java.time.LocalDateTime resetTokenExpiry;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Address> addresses = new ArrayList<>();

@@ -20,4 +20,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // Used in admin features later — find all customers
     List<User> findAllByRole(Role role);
+
+    Optional<User> findByResetToken(String resetToken);
 }

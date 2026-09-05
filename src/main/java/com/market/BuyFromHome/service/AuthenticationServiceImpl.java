@@ -1,11 +1,9 @@
 package com.market.BuyFromHome.service;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.market.BuyFromHome.dto.requestDto.userRequestDto.*;
 import com.market.BuyFromHome.enums.AuthProvider;
 import com.market.BuyFromHome.enums.Role;
-import com.market.BuyFromHome.dto.requestDto.userRequestDto.GoogleAuthRequest;
-import com.market.BuyFromHome.dto.requestDto.userRequestDto.UserLoginRequest;
-import com.market.BuyFromHome.dto.requestDto.userRequestDto.UserRegisterRequest;
 import com.market.BuyFromHome.dto.responseDto.userResposeDto.AuthResponseDto;
 import com.market.BuyFromHome.exception.AppException;
 import com.market.BuyFromHome.model.User;
@@ -26,6 +24,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
     private final GoogleAuthService googleAuthService;
+    private final EmailService emailService;
 
     @Value("${google.client.id}")
     private String googleClientId;
@@ -183,6 +182,54 @@ public class AuthenticationServiceImpl implements AuthenticationService{
                 user.getRole().name());
 
         return mapToAuthResponse(user, token);
+    }
+
+
+    @Transactional
+    @Override
+    public void forgotPassword(ForgotPasswordRequest requestDto) {
+        User user = userRepository.findByEmail(requestDto.getEmail())
+                .orElseThrow(() -> new AppException(
+                        "No account found with that email.",
+                        HttpStatus.NOT_FOUND
+                ));
+
+        if (user.getProvider() == AuthProvider.GOOGLE) {
+            throw new AppException(
+                    "This account uses Google sign-in. Password reset isn't available.",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        String token = java.util.UUID.randomUUID().toString();
+        user.setResetToken(token);
+        user.setResetTokenExpiry(java.time.LocalDateTime.now().plusMinutes(30));
+        userRepository.save(user);
+
+        emailService.sendPasswordResetEmail(user.getEmail(), token);
+    }
+
+    @Transactional
+    @Override
+    public void resetPassword(ResetPasswordRequest requestDto) {
+        User user = userRepository.findByResetToken(requestDto.getToken())
+                .orElseThrow(() -> new AppException(
+                        "Invalid or expired reset link.",
+                        HttpStatus.BAD_REQUEST
+                ));
+
+        if (user.getResetTokenExpiry() == null ||
+                user.getResetTokenExpiry().isBefore(java.time.LocalDateTime.now())) {
+            throw new AppException(
+                    "Invalid or expired reset link.",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        user.setPassword(passwordEncoder.encode(requestDto.getNewPassword()));
+        user.setResetToken(null);
+        user.setResetTokenExpiry(null);
+        userRepository.save(user);
     }
 
 

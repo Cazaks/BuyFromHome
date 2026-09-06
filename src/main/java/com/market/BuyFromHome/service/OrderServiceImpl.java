@@ -4,6 +4,7 @@ import com.market.BuyFromHome.dto.requestDto.orderRequest.OrderRequestDto;
 import com.market.BuyFromHome.dto.responseDto.orderDeliveryAddressResponse.OrderDeliveryAddressResponseDto;
 import com.market.BuyFromHome.dto.responseDto.orderItemResponse.OrderItemResponseDto;
 import com.market.BuyFromHome.dto.responseDto.orderResponse.OrderResponseDto;
+import com.market.BuyFromHome.enums.OrderStatus;
 import com.market.BuyFromHome.exception.AppException;
 import com.market.BuyFromHome.model.*;
 import com.market.BuyFromHome.repository.*;
@@ -173,6 +174,27 @@ public class OrderServiceImpl implements OrderService{
                 ));
 
         return mapToResponse(order);
+    }
+
+    @Transactional
+    @Override
+    public OrderResponseDto updateOrderStatus(Long orderId, OrderStatus status) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(
+                        "Order not found.",
+                        HttpStatus.NOT_FOUND
+                ));
+
+        order.setStatus(status);
+
+        if (status == OrderStatus.DELIVERED) {
+            order.setDeliveredAt(LocalDateTime.now());
+        }
+
+        Order savedOrder = orderRepository.save(order);
+
+        return mapToResponse(savedOrder);
     }
 
 

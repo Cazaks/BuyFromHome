@@ -434,6 +434,64 @@ class OrderServiceImplTest {
     }
 
 
+    @Test
+    @DisplayName("Should update order status successfully")
+    void shouldUpdateOrderStatusSuccessfully() {
+
+        User user = buildUser();
+        Order order = buildOrder(user);
+
+        when(orderRepository.findById(order.getOrderId()))
+                .thenReturn(Optional.of(order));
+
+        when(orderRepository.save(any(Order.class)))
+                .thenAnswer(i -> i.getArgument(0));
+
+        OrderResponseDto response =
+                orderServiceImpl.updateOrderStatus(order.getOrderId(), OrderStatus.SHIPPED);
+
+        assertThat(response.getStatus()).isEqualTo(OrderStatus.SHIPPED);
+        assertThat(order.getDeliveredAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("Should set deliveredAt when order status is set to DELIVERED")
+    void shouldSetDeliveredAtWhenStatusIsDelivered() {
+
+        User user = buildUser();
+        Order order = buildOrder(user);
+
+        when(orderRepository.findById(order.getOrderId()))
+                .thenReturn(Optional.of(order));
+
+        when(orderRepository.save(any(Order.class)))
+                .thenAnswer(i -> i.getArgument(0));
+
+        OrderResponseDto response =
+                orderServiceImpl.updateOrderStatus(order.getOrderId(), OrderStatus.DELIVERED);
+
+        assertThat(response.getStatus()).isEqualTo(OrderStatus.DELIVERED);
+        assertThat(response.getDeliveredAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("Should throw exception when updating status of non-existent order")
+    void shouldThrowExceptionWhenUpdatingStatusOfNonExistentOrder() {
+
+        when(orderRepository.findById(99L)).thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> orderServiceImpl.updateOrderStatus(99L, OrderStatus.SHIPPED)
+        );
+
+        assertThat(exception.getMessage()).isEqualTo("Order not found.");
+        assertThat(exception.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(orderRepository, never()).save(any());
+    }
+
+
 
 
 

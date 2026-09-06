@@ -144,7 +144,15 @@ public class OrderServiceImpl implements OrderService{
         return mapToResponse(order);
     }
 
-    
+
+    @Transactional
+    @Override
+    public List<OrderResponseDto> getOrdersForUser(Long userId) {
+        return orderRepository.findByUser_UserIdOrderByCreatedAtDesc(userId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
 
 
 

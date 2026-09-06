@@ -383,6 +383,22 @@ class OrderServiceImplTest {
         assertThat(exception.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
+    @Test
+    @DisplayName("Should get all orders for a user")
+    void shouldGetOrdersForUser() {
+
+        User user = buildUser();
+        Order order = buildOrder(user);
+
+        when(orderRepository.findByUser_UserIdOrderByCreatedAtDesc(user.getUserId()))
+                .thenReturn(List.of(order));
+
+        List<OrderResponseDto> responses = orderServiceImpl.getOrdersForUser(user.getUserId());
+
+        assertThat(responses).hasSize(1);
+        assertThat(responses.get(0).getOrderId()).isEqualTo(order.getOrderId());
+    }
+
 
 
 

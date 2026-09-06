@@ -77,6 +77,32 @@ class CartServiceImplTest {
                 .findByUser_UserId(user.getUserId());
     }
 
+
+    @Test
+    @DisplayName("Should throw exception when updating quantity to zero or less")
+    void shouldThrowExceptionWhenUpdatingQuantityToZeroOrLess() {
+
+        User user = buildUser();
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> cartServiceImpl.updateItemQuantity(
+                        user.getUserId(),
+                        1L,
+                        0
+                )
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Quantity must be at least 1. Use remove to delete an item.");
+
+        assertThat(exception.getStatus())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        verifyNoInteractions(cartRepository);
+        verifyNoInteractions(cartItemRepository);
+    }
+
     @Test
     @DisplayName("Should return empty cart when user does not have a persistent cart")
     void shouldReturnEmptyCartWhenUserDoesNotHavePersistentCart() {

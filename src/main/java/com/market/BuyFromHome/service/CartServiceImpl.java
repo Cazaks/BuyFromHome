@@ -150,6 +150,13 @@ public class CartServiceImpl implements CartService{
             Long cartItemId,
             int quantity) {
 
+        if (quantity < 1) {
+            throw new AppException(
+                    "Quantity must be at least 1. Use remove to delete an item.",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
         Cart cart =
                 cartRepository.findByUser_UserId(userId)
                         .orElseThrow(() ->

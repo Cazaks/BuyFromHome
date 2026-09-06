@@ -163,6 +163,18 @@ public class OrderServiceImpl implements OrderService{
                 .toList();
     }
 
+    @Transactional
+    @Override
+    public OrderResponseDto getOrderByIdAdmin(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(
+                        "Order not found.",
+                        HttpStatus.NOT_FOUND
+                ));
+
+        return mapToResponse(order);
+    }
+
 
 
 

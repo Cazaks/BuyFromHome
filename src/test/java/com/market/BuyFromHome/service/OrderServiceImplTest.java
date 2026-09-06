@@ -418,6 +418,21 @@ class OrderServiceImplTest {
         assertThat(responses).hasSize(1);
     }
 
+    @Test
+    @DisplayName("Should get any order by id as admin")
+    void shouldGetOrderByIdAsAdmin() {
+
+        User user = buildUser();
+        Order order = buildOrder(user);
+
+        when(orderRepository.findById(order.getOrderId()))
+                .thenReturn(Optional.of(order));
+
+        OrderResponseDto response = orderServiceImpl.getOrderByIdAdmin(order.getOrderId());
+
+        assertThat(response.getOrderId()).isEqualTo(order.getOrderId());
+    }
+
 
 
 

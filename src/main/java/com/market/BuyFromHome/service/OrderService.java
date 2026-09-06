@@ -18,4 +18,7 @@ public interface OrderService {
 
     @Transactional
     List<OrderResponseDto> getAllOrders();
+
+    @Transactional
+    OrderResponseDto getOrderByIdAdmin(Long orderId);
 }

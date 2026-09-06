@@ -1,6 +1,6 @@
 package com.market.BuyFromHome.dto.responseDto.orderResponse;
 
-import com.market.BuyFromHome.dto.responseDto.deliveryAddressResponse.DeliveryAddressResponseDto;
+import com.market.BuyFromHome.dto.responseDto.orderDeliveryAddressResponse.OrderDeliveryAddressResponseDto;
 import com.market.BuyFromHome.dto.responseDto.orderItemResponse.OrderItemResponseDto;
 import com.market.BuyFromHome.enums.OrderStatus;
 import com.market.BuyFromHome.enums.PaymentMethod;
@@ -24,7 +24,7 @@ public class OrderResponseDto {
     private OrderStatus status;
     private PaymentStatus paymentStatus;
     private PaymentMethod paymentMethod;
-    private DeliveryAddressResponseDto deliveryAddress;
+    private OrderDeliveryAddressResponseDto deliveryAddress;
     private String notes;
     private LocalDateTime deliveredAt;
     private LocalDateTime createdAt;

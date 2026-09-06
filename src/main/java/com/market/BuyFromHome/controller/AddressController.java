@@ -1,8 +1,11 @@
 package com.market.BuyFromHome.controller;
 
-import com.market.BuyFromHome.dto.requestDto.addressRequest.AddressRequestDto;
+import com.market.BuyFromHome.dto.requestDto.deliveryAddressRequest.DeliveryAddressRequestDto;
 import com.market.BuyFromHome.dto.responseDto.addressResponse.AddressResponseDto;
+import com.market.BuyFromHome.security.CurrentUserProvider;
 import com.market.BuyFromHome.service.AddressService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,106 +15,96 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/users/{userId}/addresses")
+@RequestMapping("/api/v1/addresses")
 @RequiredArgsConstructor
+@Tag(
+        name = "Addresses",
+        description = "Endpoints for managing a user's delivery addresses"
+)
 public class AddressController {
 
     private final AddressService addressService;
+    private final CurrentUserProvider currentUserProvider;
 
-    // ==========================
-    // CREATE ADDRESS
-    // ==========================
     @PostMapping
+    @Operation(summary = "Create a new address for the current user")
     public ResponseEntity<AddressResponseDto> createAddress(
-            @PathVariable Long userId,
-            @Valid @RequestBody AddressRequestDto requestDto) {
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(addressService.createAddress(userId, requestDto));
+            @Valid @RequestBody DeliveryAddressRequestDto requestDto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                addressService.createAddress(
+                        currentUserProvider.getCurrentUserId(),
+                        requestDto
+                )
+        );
     }
 
-    // ==========================
-    // GET ALL USER ADDRESSES
-    // ==========================
     @GetMapping
-    public ResponseEntity<List<AddressResponseDto>> getAllAddresses(
-            @PathVariable Long userId) {
-
+    @Operation(summary = "Get all addresses for the current user")
+    public ResponseEntity<List<AddressResponseDto>> getMyAddresses() {
         return ResponseEntity.ok(
-                addressService.getAllAddresses(userId));
+                addressService.getAddressesForUser(currentUserProvider.getCurrentUserId())
+        );
     }
 
-    // ==========================
-    // GET ADDRESS BY ID
-    // ==========================
     @GetMapping("/{addressId}")
+    @Operation(summary = "Get one of the current user's addresses by ID")
     public ResponseEntity<AddressResponseDto> getAddressById(
             @PathVariable Long addressId) {
-
         return ResponseEntity.ok(
-                addressService.getAddressById(addressId));
+                addressService.getAddressById(
+                        currentUserProvider.getCurrentUserId(),
+                        addressId
+                )
+        );
     }
 
-    // ==========================
-    // UPDATE ADDRESS
-    // ==========================
     @PutMapping("/{addressId}")
+    @Operation(summary = "Update one of the current user's addresses")
     public ResponseEntity<AddressResponseDto> updateAddress(
-            @PathVariable Long userId,
             @PathVariable Long addressId,
-            @Valid @RequestBody AddressRequestDto requestDto) {
-
+            @Valid @RequestBody DeliveryAddressRequestDto requestDto) {
         return ResponseEntity.ok(
                 addressService.updateAddress(
-                        userId,
+                        currentUserProvider.getCurrentUserId(),
                         addressId,
                         requestDto
-                ));
+                )
+        );
     }
 
-    // ==========================
-    // SET DEFAULT ADDRESS
-    // ==========================
-    @PatchMapping("/{addressId}/default")
+    @PatchMapping("/{addressId}/set-default")
+    @Operation(summary = "Set one of the current user's addresses as their default")
     public ResponseEntity<AddressResponseDto> setDefaultAddress(
-            @PathVariable Long userId,
             @PathVariable Long addressId) {
-
         return ResponseEntity.ok(
                 addressService.setDefaultAddress(
-                        userId,
+                        currentUserProvider.getCurrentUserId(),
                         addressId
-                ));
+                )
+        );
     }
 
-    // ==========================
-    // DISABLE ADDRESS
-    // ==========================
     @PatchMapping("/{addressId}/disable")
+    @Operation(summary = "Disable one of the current user's addresses")
     public ResponseEntity<AddressResponseDto> disableAddress(
-            @PathVariable Long userId,
             @PathVariable Long addressId) {
-
         return ResponseEntity.ok(
                 addressService.disableAddress(
-                        userId,
+                        currentUserProvider.getCurrentUserId(),
                         addressId
-                ));
+                )
+        );
     }
 
-    // ==========================
-    // ENABLE ADDRESS
-    // ==========================
     @PatchMapping("/{addressId}/enable")
+    @Operation(summary = "Enable one of the current user's addresses")
     public ResponseEntity<AddressResponseDto> enableAddress(
-            @PathVariable Long userId,
             @PathVariable Long addressId) {
-
         return ResponseEntity.ok(
                 addressService.enableAddress(
-                        userId,
+                        currentUserProvider.getCurrentUserId(),
                         addressId
-                ));
+                )
+        );
     }
 }

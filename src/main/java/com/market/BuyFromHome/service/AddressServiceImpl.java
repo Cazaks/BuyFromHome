@@ -1,76 +1,39 @@
 package com.market.BuyFromHome.service;
 
-import com.market.BuyFromHome.dto.requestDto.addressRequest.AddressRequestDto;
+import com.market.BuyFromHome.dto.requestDto.deliveryAddressRequest.DeliveryAddressRequestDto;
 import com.market.BuyFromHome.dto.responseDto.addressResponse.AddressResponseDto;
 import com.market.BuyFromHome.exception.AppException;
 import com.market.BuyFromHome.model.Address;
 import com.market.BuyFromHome.model.User;
 import com.market.BuyFromHome.repository.AddressRepository;
 import com.market.BuyFromHome.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-
 @Service
 @RequiredArgsConstructor
-public class AddressServiceImpl implements AddressService{
+public class AddressServiceImpl implements AddressService {
 
     private final AddressRepository addressRepository;
     private final UserRepository userRepository;
 
+    @Transactional
     @Override
-    public AddressResponseDto createAddress(Long userId, AddressRequestDto requestDto){
+    public AddressResponseDto createAddress(Long userId, DeliveryAddressRequestDto requestDto) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new AppException(
-                                "User not found.",
-                                HttpStatus.NOT_FOUND
-                        ));
+                .orElseThrow(() -> new AppException(
+                        "User not found.",
+                        HttpStatus.NOT_FOUND
+                ));
 
-        boolean addressExists =
-                addressRepository
-                        .existsByUser_UserIdAndStreetAddressIgnoreCaseAndCityIgnoreCaseAndStateIgnoreCaseAndCountryIgnoreCase(
-                                userId,
-                                requestDto.getStreetAddress(),
-                                requestDto.getCity(),
-                                requestDto.getState(),
-                                requestDto.getCountry()
-                        );
-
-        if (addressExists) {
-            throw new AppException(
-                    "Address already exists.",
-                    HttpStatus.BAD_REQUEST
-            );
+        if (requestDto.isDefault()) {
+            unsetExistingDefault(userId);
         }
-
-        List<Address> existingAddresses =
-                addressRepository.findByUser_UserId(userId);
-
-        if (existingAddresses.isEmpty()
-                && !requestDto.isDefault()) {
-
-            throw new AppException(
-                    "First address must be set as default.",
-                    HttpStatus.BAD_REQUEST
-            );
-        }
-
-        if (!existingAddresses.isEmpty()
-                && requestDto.isDefault()
-                && existingAddresses.stream()
-                .anyMatch(Address::isDefault)) {
-
-            throw new AppException(
-                    "User already has a default address.",
-                    HttpStatus.BAD_REQUEST
-            );
-        }
-
 
         Address address = Address.builder()
                 .streetAddress(requestDto.getStreetAddress())
@@ -81,127 +44,48 @@ public class AddressServiceImpl implements AddressService{
                 .landmark(requestDto.getLandmark())
                 .isDefault(requestDto.isDefault())
                 .user(user)
+                .enabled(true)
                 .build();
 
         Address savedAddress = addressRepository.save(address);
-        return mapToResponse(savedAddress);
-
-    }
-
-    @Override
-    public AddressResponseDto setDefaultAddress(
-            Long userId,
-            Long addressId) {
-
-        Address newDefaultAddress =
-                addressRepository.findById(addressId)
-                        .orElseThrow(() ->
-                                new AppException(
-                                        "Address not found.",
-                                        HttpStatus.NOT_FOUND
-                                ));
-
-        if (!newDefaultAddress.getUser().getUserId().equals(userId)) {
-            throw new AppException(
-                    "Address does not belong to user.",
-                    HttpStatus.BAD_REQUEST
-            );
-        }
-
-        if (!newDefaultAddress.isEnabled()) {
-            throw new AppException(
-                    "Cannot set a disabled address as default.",
-                    HttpStatus.BAD_REQUEST
-            );
-        }
-
-        List<Address> addresses =
-                addressRepository.findByUser_UserId(userId);
-
-        for (Address address : addresses) {
-            address.setDefault(
-                    address.getAddressId().equals(addressId)
-            );
-        }
-
-        Address savedAddress =
-                addressRepository.save(newDefaultAddress);
 
         return mapToResponse(savedAddress);
     }
 
+    @Transactional
     @Override
-    public AddressResponseDto getAddressById(Long addressId) {
-
-        Address address =
-                addressRepository.findById(addressId)
-                        .orElseThrow(() ->
-                                new AppException(
-                                        "Address not found.",
-                                        HttpStatus.NOT_FOUND
-                                ));
-
-        return mapToResponse(address);
-    }
-
-    @Override
-    public List<AddressResponseDto> getAllAddresses(Long userId) {
-
-        List<Address> addresses =
-                addressRepository.findByUser_UserId(userId);
-
-        return addresses.stream()
+    public List<AddressResponseDto> getAddressesForUser(Long userId) {
+        return addressRepository.findByUser_UserId(userId)
+                .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
+    @Transactional
     @Override
-    public AddressResponseDto updateAddress(
-            Long userId,
-            Long addressId,
-            AddressRequestDto requestDto) {
+    public AddressResponseDto getAddressById(Long userId, Long addressId) {
 
-        Address address =
-                addressRepository.findById(addressId)
-                        .orElseThrow(() ->
-                                new AppException(
-                                        "Address not found.",
-                                        HttpStatus.NOT_FOUND
-                                ));
+        Address address = addressRepository.findByAddressIdAndUser_UserId(addressId, userId)
+                .orElseThrow(() -> new AppException(
+                        "Address not found.",
+                        HttpStatus.NOT_FOUND
+                ));
 
-        if (!address.getUser().getUserId().equals(userId)) {
-            throw new AppException(
-                    "Address does not belong to user.",
-                    HttpStatus.BAD_REQUEST
-            );
-        }
+        return mapToResponse(address);
+    }
 
-        List<Address> existingAddresses =
-                addressRepository.findByUser_UserId(userId);
+    @Transactional
+    @Override
+    public AddressResponseDto updateAddress(Long userId, Long addressId, DeliveryAddressRequestDto requestDto) {
 
-        if (requestDto.isDefault()
-                && existingAddresses.stream()
-                .anyMatch(existingAddress ->
-                        !existingAddress.getAddressId().equals(addressId)
-                                && existingAddress.isDefault())) {
+        Address address = addressRepository.findByAddressIdAndUser_UserId(addressId, userId)
+                .orElseThrow(() -> new AppException(
+                        "Address not found.",
+                        HttpStatus.NOT_FOUND
+                ));
 
-            throw new AppException(
-                    "User already has a default address.",
-                    HttpStatus.BAD_REQUEST
-            );
-        }
-
-        if (!requestDto.isDefault()
-                && address.isDefault()
-                && existingAddresses.stream()
-                .noneMatch(existingAddress ->
-                        !existingAddress.getAddressId().equals(addressId)
-                                && existingAddress.isDefault())) {
-
-            throw new AppException(
-                    "User must have a default address.",
-                    HttpStatus.BAD_REQUEST
-            );
+        if (requestDto.isDefault() && !address.isDefault()) {
+            unsetExistingDefault(userId);
         }
 
         address.setStreetAddress(requestDto.getStreetAddress());
@@ -212,78 +96,75 @@ public class AddressServiceImpl implements AddressService{
         address.setLandmark(requestDto.getLandmark());
         address.setDefault(requestDto.isDefault());
 
-        Address updatedAddress =
-                addressRepository.save(address);
+        Address updatedAddress = addressRepository.save(address);
 
         return mapToResponse(updatedAddress);
     }
 
+    @Transactional
     @Override
-    public AddressResponseDto disableAddress(
-            Long userId,
-            Long addressId) {
+    public AddressResponseDto setDefaultAddress(Long userId, Long addressId) {
 
-        Address address =
-                addressRepository.findById(addressId)
-                        .orElseThrow(() ->
-                                new AppException(
-                                        "Address not found.",
-                                        HttpStatus.NOT_FOUND
-                                ));
+        Address address = addressRepository.findByAddressIdAndUser_UserId(addressId, userId)
+                .orElseThrow(() -> new AppException(
+                        "Address not found.",
+                        HttpStatus.NOT_FOUND
+                ));
 
-        if (!address.getUser().getUserId().equals(userId)) {
-            throw new AppException(
-                    "Address does not belong to user.",
-                    HttpStatus.BAD_REQUEST
-            );
-        }
+        unsetExistingDefault(userId);
 
-        if (address.isDefault()) {
-            throw new AppException(
-                    "Cannot disable the default address.",
-                    HttpStatus.BAD_REQUEST
-            );
-        }
+        address.setDefault(true);
+
+        Address updatedAddress = addressRepository.save(address);
+
+        return mapToResponse(updatedAddress);
+    }
+
+    @Transactional
+    @Override
+    public AddressResponseDto disableAddress(Long userId, Long addressId) {
+
+        Address address = addressRepository.findByAddressIdAndUser_UserId(addressId, userId)
+                .orElseThrow(() -> new AppException(
+                        "Address not found.",
+                        HttpStatus.NOT_FOUND
+                ));
 
         address.setEnabled(false);
 
-        Address disabledAddress =
-                addressRepository.save(address);
+        Address updatedAddress = addressRepository.save(address);
 
-        return mapToResponse(disabledAddress);
+        return mapToResponse(updatedAddress);
     }
 
+    @Transactional
     @Override
-    public AddressResponseDto enableAddress(
-            Long userId,
-            Long addressId) {
+    public AddressResponseDto enableAddress(Long userId, Long addressId) {
 
-        Address address =
-                addressRepository.findById(addressId)
-                        .orElseThrow(() ->
-                                new AppException(
-                                        "Address not found.",
-                                        HttpStatus.NOT_FOUND
-                                ));
-
-        if (!address.getUser().getUserId().equals(userId)) {
-            throw new AppException(
-                    "Address does not belong to user.",
-                    HttpStatus.BAD_REQUEST
-            );
-        }
+        Address address = addressRepository.findByAddressIdAndUser_UserId(addressId, userId)
+                .orElseThrow(() -> new AppException(
+                        "Address not found.",
+                        HttpStatus.NOT_FOUND
+                ));
 
         address.setEnabled(true);
 
-        Address enabledAddress =
-                addressRepository.save(address);
+        Address updatedAddress = addressRepository.save(address);
 
-        return mapToResponse(enabledAddress);
+        return mapToResponse(updatedAddress);
     }
 
+    private void unsetExistingDefault(Long userId) {
+        List<Address> addresses = addressRepository.findByUser_UserId(userId);
+        for (Address existing : addresses) {
+            if (existing.isDefault()) {
+                existing.setDefault(false);
+                addressRepository.save(existing);
+            }
+        }
+    }
 
-
-    private AddressResponseDto mapToResponse(Address address){
+    private AddressResponseDto mapToResponse(Address address) {
         return AddressResponseDto.builder()
                 .id(address.getAddressId())
                 .streetAddress(address.getStreetAddress())

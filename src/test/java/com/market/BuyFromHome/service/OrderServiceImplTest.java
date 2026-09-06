@@ -348,6 +348,41 @@ class OrderServiceImplTest {
         assertThat(measurement.getQuantityInStock()).isEqualTo(16);
     }
 
+    @Test
+    @DisplayName("Should get own order by id successfully")
+    void shouldGetOwnOrderByIdSuccessfully() {
+
+        User user = buildUser();
+        Order order = buildOrder(user);
+
+        when(orderRepository.findByOrderIdAndUser_UserId(order.getOrderId(), user.getUserId()))
+                .thenReturn(Optional.of(order));
+
+        OrderResponseDto response =
+                orderServiceImpl.getOrderById(user.getUserId(), order.getOrderId());
+
+        assertThat(response).isNotNull();
+        assertThat(response.getOrderId()).isEqualTo(order.getOrderId());
+    }
+
+    @Test
+    @DisplayName("Should throw exception when order does not belong to user")
+    void shouldThrowExceptionWhenOrderDoesNotBelongToUser() {
+
+        User user = buildUser();
+
+        when(orderRepository.findByOrderIdAndUser_UserId(1L, user.getUserId()))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> orderServiceImpl.getOrderById(user.getUserId(), 1L)
+        );
+
+        assertThat(exception.getMessage()).isEqualTo("Order not found.");
+        assertThat(exception.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
 
 
 

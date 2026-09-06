@@ -131,6 +131,21 @@ public class OrderServiceImpl implements OrderService{
         return mapToResponse(savedOrder);
     }
 
+    @Transactional
+    @Override
+    public OrderResponseDto getOrderById(Long userId, Long orderId) {
+
+        Order order = orderRepository.findByOrderIdAndUser_UserId(orderId, userId)
+                .orElseThrow(() -> new AppException(
+                        "Order not found.",
+                        HttpStatus.NOT_FOUND
+                ));
+
+        return mapToResponse(order);
+    }
+
+    
+
 
 
 

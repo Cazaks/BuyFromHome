@@ -7,4 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 public interface OrderService {
     @Transactional
     OrderResponseDto createOrder(Long userId, OrderRequestDto requestDto);
+
+    @Transactional
+    OrderResponseDto getOrderById(Long userId, Long orderId);
 }

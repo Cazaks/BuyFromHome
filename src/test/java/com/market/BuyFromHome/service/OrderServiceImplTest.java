@@ -491,10 +491,43 @@ class OrderServiceImplTest {
         verify(orderRepository, never()).save(any());
     }
 
+    @Test
+    @DisplayName("Should update payment status successfully")
+    void shouldUpdatePaymentStatusSuccessfully() {
 
+        User user = buildUser();
+        Order order = buildOrder(user);
 
+        when(orderRepository.findById(order.getOrderId()))
+                .thenReturn(Optional.of(order));
 
+        when(orderRepository.save(any(Order.class)))
+                .thenAnswer(i -> i.getArgument(0));
 
+        OrderResponseDto response =
+                orderServiceImpl.updatePaymentStatus(order.getOrderId(), PaymentStatus.PAID);
+
+        assertThat(response.getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when updating payment status of non-existent order")
+    void shouldThrowExceptionWhenUpdatingPaymentStatusOfNonExistentOrder() {
+
+        when(orderRepository.findById(99L)).thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> orderServiceImpl.updatePaymentStatus(99L, PaymentStatus.PAID)
+        );
+
+        assertThat(exception.getMessage()).isEqualTo("Order not found.");
+        assertThat(exception.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(orderRepository, never()).save(any());
+    }
+
+    
     // ==========================
     // TEST HELPERS
     // ==========================

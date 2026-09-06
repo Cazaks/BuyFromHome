@@ -15,4 +15,7 @@ public interface OrderService {
 
     @Transactional
     List<OrderResponseDto> getOrdersForUser(Long userId);
+
+    @Transactional
+    List<OrderResponseDto> getAllOrders();
 }

@@ -154,6 +154,15 @@ public class OrderServiceImpl implements OrderService{
                 .toList();
     }
 
+    @Transactional
+    @Override
+    public List<OrderResponseDto> getAllOrders() {
+        return orderRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
 
 
 

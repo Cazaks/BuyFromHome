@@ -400,6 +400,25 @@ class OrderServiceImplTest {
     }
 
 
+    // ==========================
+    // ADMIN TESTS
+    // ==========================
+
+    @Test
+    @DisplayName("Should get all orders as admin")
+    void shouldGetAllOrdersAsAdmin() {
+
+        User user = buildUser();
+        Order order = buildOrder(user);
+
+        when(orderRepository.findAll()).thenReturn(List.of(order));
+
+        List<OrderResponseDto> responses = orderServiceImpl.getAllOrders();
+
+        assertThat(responses).hasSize(1);
+    }
+
+
 
 
 

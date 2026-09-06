@@ -2,6 +2,7 @@ package com.market.BuyFromHome.controller;
 
 import com.market.BuyFromHome.dto.requestDto.cartItemRequest.CartItemRequestDto;
 import com.market.BuyFromHome.dto.responseDto.cartResponse.CartResponseDto;
+import com.market.BuyFromHome.security.CurrentUserProvider;
 import com.market.BuyFromHome.service.CartService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -9,35 +10,32 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/carts")
+@RequestMapping("/api/v1/carts")
 @RequiredArgsConstructor
-public class CartServiceController {
+public class CartController {
 
     private final CartService cartService;
+    private final CurrentUserProvider currentUserProvider;
 
     // ==========================
-    // GET USER CART
+    // GET CURRENT USER'S CART
     // ==========================
-    @GetMapping("/{userId}")
-    public ResponseEntity<CartResponseDto> getCart(
-            @PathVariable Long userId) {
-
+    @GetMapping
+    public ResponseEntity<CartResponseDto> getCart() {
         return ResponseEntity.ok(
-                cartService.getCart(userId)
+                cartService.getCart(currentUserProvider.getCurrentUserId())
         );
     }
 
     // ==========================
     // ADD ITEM TO CART
     // ==========================
-    @PostMapping("/{userId}/items")
+    @PostMapping("/items")
     public ResponseEntity<CartResponseDto> addItem(
-            @PathVariable Long userId,
             @Valid @RequestBody CartItemRequestDto requestDto) {
-
         return ResponseEntity.ok(
                 cartService.addItem(
-                        userId,
+                        currentUserProvider.getCurrentUserId(),
                         requestDto
                 )
         );
@@ -46,15 +44,13 @@ public class CartServiceController {
     // ==========================
     // UPDATE ITEM QUANTITY
     // ==========================
-    @PatchMapping("/{userId}/items/{cartItemId}")
+    @PatchMapping("/items/{cartItemId}")
     public ResponseEntity<CartResponseDto> updateItemQuantity(
-            @PathVariable Long userId,
             @PathVariable Long cartItemId,
             @RequestParam int quantity) {
-
         return ResponseEntity.ok(
                 cartService.updateItemQuantity(
-                        userId,
+                        currentUserProvider.getCurrentUserId(),
                         cartItemId,
                         quantity
                 )
@@ -64,14 +60,12 @@ public class CartServiceController {
     // ==========================
     // REMOVE ITEM FROM CART
     // ==========================
-    @DeleteMapping("/{userId}/items/{cartItemId}")
+    @DeleteMapping("/items/{cartItemId}")
     public ResponseEntity<CartResponseDto> removeItem(
-            @PathVariable Long userId,
             @PathVariable Long cartItemId) {
-
         return ResponseEntity.ok(
                 cartService.removeItem(
-                        userId,
+                        currentUserProvider.getCurrentUserId(),
                         cartItemId
                 )
         );
@@ -80,12 +74,10 @@ public class CartServiceController {
     // ==========================
     // CLEAR CART
     // ==========================
-    @DeleteMapping("/{userId}/items")
-    public ResponseEntity<CartResponseDto> clearCart(
-            @PathVariable Long userId) {
-
+    @DeleteMapping("/items")
+    public ResponseEntity<CartResponseDto> clearCart() {
         return ResponseEntity.ok(
-                cartService.clearCart(userId)
+                cartService.clearCart(currentUserProvider.getCurrentUserId())
         );
     }
 }

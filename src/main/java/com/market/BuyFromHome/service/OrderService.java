@@ -1,6 +1,7 @@
 package com.market.BuyFromHome.service;
 
 import com.market.BuyFromHome.dto.requestDto.orderRequest.OrderRequestDto;
+import com.market.BuyFromHome.dto.requestDto.orderTrackingRequest.OrderTrackingRequestDto;
 import com.market.BuyFromHome.dto.responseDto.orderResponse.OrderResponseDto;
 import com.market.BuyFromHome.enums.OrderStatus;
 import com.market.BuyFromHome.enums.PaymentStatus;
@@ -29,4 +30,7 @@ public interface OrderService {
 
     @Transactional
     OrderResponseDto updatePaymentStatus(Long orderId, PaymentStatus paymentStatus);
+
+    @jakarta.transaction.Transactional
+    OrderResponseDto updateTracking(Long orderId, OrderTrackingRequestDto requestDto);
 }

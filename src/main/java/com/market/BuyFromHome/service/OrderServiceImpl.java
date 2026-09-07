@@ -1,6 +1,7 @@
 package com.market.BuyFromHome.service;
 
 import com.market.BuyFromHome.dto.requestDto.orderRequest.OrderRequestDto;
+import com.market.BuyFromHome.dto.requestDto.orderTrackingRequest.OrderTrackingRequestDto;
 import com.market.BuyFromHome.dto.responseDto.orderDeliveryAddressResponse.OrderDeliveryAddressResponseDto;
 import com.market.BuyFromHome.dto.responseDto.orderItemResponse.OrderItemResponseDto;
 import com.market.BuyFromHome.dto.responseDto.orderResponse.OrderResponseDto;
@@ -8,11 +9,15 @@ import com.market.BuyFromHome.enums.OrderStatus;
 import com.market.BuyFromHome.enums.PaymentStatus;
 import com.market.BuyFromHome.exception.AppException;
 import com.market.BuyFromHome.model.*;
-import com.market.BuyFromHome.repository.*;
+import com.market.BuyFromHome.repository.AddressRepository;
+import com.market.BuyFromHome.repository.CartItemRepository;
+import com.market.BuyFromHome.repository.CartRepository;
+import com.market.BuyFromHome.repository.OrderRepository;
+import com.market.BuyFromHome.repository.ProductSellingMeasurementRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -20,10 +25,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-
 @Service
 @RequiredArgsConstructor
-public class OrderServiceImpl implements OrderService{
+public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final CartRepository cartRepository;
@@ -33,8 +37,7 @@ public class OrderServiceImpl implements OrderService{
 
     @Transactional
     @Override
-    public OrderResponseDto createOrder(Long userId, OrderRequestDto requestDto){
-
+    public OrderResponseDto createOrder(Long userId, OrderRequestDto requestDto) {
 
         Cart cart = cartRepository.findByUser_UserId(userId)
                 .orElseThrow(() -> new AppException(
@@ -80,53 +83,52 @@ public class OrderServiceImpl implements OrderService{
                 );
             }
 
-        measurement.setQuantityInStock(
-                measurement.getQuantityInStock() - cartItem.getQuantity()
-        );
-        productSellingMeasurementRepository.save(measurement);
+            measurement.setQuantityInStock(
+                    measurement.getQuantityInStock() - cartItem.getQuantity()
+            );
+            productSellingMeasurementRepository.save(measurement);
 
-        BigDecimal subtotal = cartItem.getPriceAtTimeOfAdding()
-                .multiply(BigDecimal.valueOf(cartItem.getQuantity()));
+            BigDecimal subtotal = cartItem.getPriceAtTimeOfAdding()
+                    .multiply(BigDecimal.valueOf(cartItem.getQuantity()));
 
-        totalAmount = totalAmount.add(subtotal);
+            totalAmount = totalAmount.add(subtotal);
 
-        OrderItem orderItem = OrderItem.builder()
-                .sellingMeasurement(measurement)
-                .quantity(cartItem.getQuantity())
-                .unitPrice(cartItem.getPriceAtTimeOfAdding())
-                .subtotal(subtotal)
+            OrderItem orderItem = OrderItem.builder()
+                    .sellingMeasurement(measurement)
+                    .quantity(cartItem.getQuantity())
+                    .unitPrice(cartItem.getPriceAtTimeOfAdding())
+                    .subtotal(subtotal)
+                    .build();
+
+            orderItems.add(orderItem);
+        }
+
+        DeliveryAddress deliveryAddress = DeliveryAddress.builder()
+                .streetAddress(address.getStreetAddress())
+                .phoneNumber(address.getPhoneNumber())
+                .city(address.getCity())
+                .state(address.getState())
+                .country(address.getCountry())
+                .landmark(address.getLandmark())
                 .build();
 
-        orderItems.add(orderItem);
-    }
+        Order order = Order.builder()
+                .orderNumber(generateOrderNumber())
+                .user(cart.getUser())
+                .totalAmount(totalAmount)
+                .paymentMethod(requestDto.getPaymentMethod())
+                .deliveryAddress(deliveryAddress)
+                .notes(requestDto.getNotes())
+                .build();
 
-    DeliveryAddress deliveryAddress = DeliveryAddress.builder()
-            .streetAddress(address.getStreetAddress())
-            .phoneNumber(address.getPhoneNumber())
-            .city(address.getCity())
-            .state(address.getState())
-            .country(address.getCountry())
-            .landmark(address.getLandmark())
-            .build();
+        for (OrderItem item : orderItems) {
+            item.setOrder(order);
+            order.getItems().add(item);
+        }
 
-    Order order = Order.builder()
-            .orderNumber(generateOrderNumber())
-            .user(cart.getUser())
-            .totalAmount(totalAmount)
-            .paymentMethod(requestDto.getPaymentMethod())
-            .deliveryAddress(deliveryAddress)
-            .notes(requestDto.getNotes())
-            .build();
+        Order savedOrder = orderRepository.save(order);
 
-        for (
-    OrderItem item : orderItems) {
-        item.setOrder(order);
-        order.getItems().add(item);
-    }
-
-    Order savedOrder = orderRepository.save(order);
-
-    List<CartItem> itemsToRemove = new ArrayList<>(cart.getItems());
+        List<CartItem> itemsToRemove = new ArrayList<>(cart.getItems());
         cartItemRepository.deleteAll(itemsToRemove);
         cart.getItems().clear();
 
@@ -145,7 +147,6 @@ public class OrderServiceImpl implements OrderService{
 
         return mapToResponse(order);
     }
-
 
     @Transactional
     @Override
@@ -215,8 +216,24 @@ public class OrderServiceImpl implements OrderService{
         return mapToResponse(savedOrder);
     }
 
+    @Transactional
+    @Override
+    public OrderResponseDto updateTracking(Long orderId, OrderTrackingRequestDto requestDto) {
 
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(
+                        "Order not found.",
+                        HttpStatus.NOT_FOUND
+                ));
 
+        order.setCourierName(requestDto.getCourierName());
+        order.setTrackingNumber(requestDto.getTrackingNumber());
+        order.setTrackingUrl(requestDto.getTrackingUrl());
+
+        Order savedOrder = orderRepository.save(order);
+
+        return mapToResponse(savedOrder);
+    }
 
     private String generateOrderNumber() {
         String datePart = LocalDateTime.now()
@@ -263,6 +280,9 @@ public class OrderServiceImpl implements OrderService{
                 .deliveryAddress(deliveryAddress)
                 .notes(order.getNotes())
                 .deliveredAt(order.getDeliveredAt())
+                .courierName(order.getCourierName())
+                .trackingNumber(order.getTrackingNumber())
+                .trackingUrl(order.getTrackingUrl())
                 .createdAt(order.getCreatedAt())
                 .updatedAt(order.getUpdatedAt())
                 .build();

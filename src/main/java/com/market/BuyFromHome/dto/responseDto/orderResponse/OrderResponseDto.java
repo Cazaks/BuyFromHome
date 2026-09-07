@@ -27,6 +27,9 @@ public class OrderResponseDto {
     private OrderDeliveryAddressResponseDto deliveryAddress;
     private String notes;
     private LocalDateTime deliveredAt;
+    private String courierName;
+    private String trackingNumber;
+    private String trackingUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

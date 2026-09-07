@@ -61,4 +61,13 @@ public class Order extends BasicEntity {
     private String notes;
 
     private LocalDateTime deliveredAt;
+
+    @Column
+    private String courierName;
+
+    @Column
+    private String trackingNumber;
+
+    @Column(length = 500)
+    private String trackingUrl;
 }

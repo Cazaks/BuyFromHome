@@ -1,6 +1,7 @@
 package com.market.BuyFromHome.controller;
 
 import com.market.BuyFromHome.dto.requestDto.orderRequest.OrderRequestDto;
+import com.market.BuyFromHome.dto.requestDto.orderTrackingRequest.OrderTrackingRequestDto;
 import com.market.BuyFromHome.dto.responseDto.orderResponse.OrderResponseDto;
 import com.market.BuyFromHome.enums.OrderStatus;
 import com.market.BuyFromHome.enums.PaymentStatus;
@@ -113,5 +114,17 @@ public class OrderController {
             @PathVariable Long orderId,
             @RequestParam PaymentStatus paymentStatus) {
         return ResponseEntity.ok(orderService.updatePaymentStatus(orderId, paymentStatus));
+    }
+
+    // ==========================
+    // TRACKING ORDER
+    // ==========================
+    @PatchMapping("/admin/{orderId}/tracking")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Add or update tracking info for an order (admin only)")
+    public ResponseEntity<OrderResponseDto> updateTracking(
+            @PathVariable Long orderId,
+            @Valid @RequestBody OrderTrackingRequestDto requestDto) {
+        return ResponseEntity.ok(orderService.updateTracking(orderId, requestDto));
     }
 }

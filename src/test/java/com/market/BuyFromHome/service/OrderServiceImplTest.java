@@ -1,6 +1,7 @@
 package com.market.BuyFromHome.service;
 
 import com.market.BuyFromHome.dto.requestDto.orderRequest.OrderRequestDto;
+import com.market.BuyFromHome.dto.requestDto.orderTrackingRequest.OrderTrackingRequestDto;
 import com.market.BuyFromHome.dto.responseDto.orderResponse.OrderResponseDto;
 import com.market.BuyFromHome.enums.*;
 import com.market.BuyFromHome.exception.AppException;
@@ -519,6 +520,56 @@ class OrderServiceImplTest {
         AppException exception = assertThrows(
                 AppException.class,
                 () -> orderServiceImpl.updatePaymentStatus(99L, PaymentStatus.PAID)
+        );
+
+        assertThat(exception.getMessage()).isEqualTo("Order not found.");
+        assertThat(exception.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(orderRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should update tracking info successfully")
+    void shouldUpdateTrackingInfoSuccessfully() {
+
+        User user = buildUser();
+        Order order = buildOrder(user);
+
+        OrderTrackingRequestDto requestDto = OrderTrackingRequestDto.builder()
+                .courierName("GIG Logistics")
+                .trackingNumber("GIG123456789")
+                .trackingUrl("https://giglogistics.com/track/GIG123456789")
+                .build();
+
+        when(orderRepository.findById(order.getOrderId()))
+                .thenReturn(Optional.of(order));
+
+        when(orderRepository.save(any(Order.class)))
+                .thenAnswer(i -> i.getArgument(0));
+
+        OrderResponseDto response =
+                orderServiceImpl.updateTracking(order.getOrderId(), requestDto);
+
+        assertThat(response.getCourierName()).isEqualTo("GIG Logistics");
+        assertThat(response.getTrackingNumber()).isEqualTo("GIG123456789");
+        assertThat(response.getTrackingUrl())
+                .isEqualTo("https://giglogistics.com/track/GIG123456789");
+    }
+
+    @Test
+    @DisplayName("Should throw exception when updating tracking for non-existent order")
+    void shouldThrowExceptionWhenUpdatingTrackingForNonExistentOrder() {
+
+        OrderTrackingRequestDto requestDto = OrderTrackingRequestDto.builder()
+                .courierName("GIG Logistics")
+                .trackingNumber("GIG123456789")
+                .build();
+
+        when(orderRepository.findById(99L)).thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> orderServiceImpl.updateTracking(99L, requestDto)
         );
 
         assertThat(exception.getMessage()).isEqualTo("Order not found.");

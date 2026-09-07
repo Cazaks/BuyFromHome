@@ -95,7 +95,7 @@ public class PaymentServiceImpl implements PaymentService {
                         HttpStatus.NOT_FOUND
                 ));
 
-        payment.setStatus(PaymentStatus.PROCESSING);
+        payment.setStatus(PaymentStatus.PENDING);
         payment.setGatewayProvider(gatewayProvider);
         payment.setTransactionId(transactionId);
 

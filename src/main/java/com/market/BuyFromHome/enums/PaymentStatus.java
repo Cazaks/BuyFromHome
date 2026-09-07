@@ -2,10 +2,7 @@ package com.market.BuyFromHome.enums;
 
 public enum PaymentStatus {
     PENDING,
-    PAID,
-    FAILED,
-    REFUNDED,
-    PROCESSING,
     SUCCESS,
-    CANCELLED
+    FAILED,
+    REFUNDED
 }

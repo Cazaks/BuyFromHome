@@ -202,6 +202,47 @@ class PaymentServiceImplTest {
     // MARK PROCESSING TESTS
     // ==========================
 
+    @Test
+    @DisplayName("Should mark payment as processing successfully")
+    void shouldMarkPaymentProcessingSuccessfully() {
+
+        User user = buildUser();
+        Order order = buildOrder(1L, new BigDecimal("5000.00"));
+        Payment payment = buildPayment(user, order, 1L, PaymentStatus.PENDING);
+
+        when(paymentRepository.findById(1L))
+                .thenReturn(Optional.of(payment));
+
+        when(paymentRepository.save(any(Payment.class)))
+                .thenAnswer(i -> i.getArgument(0));
+
+        PaymentResponseDto response =
+                paymentServiceImpl.markPaymentProcessing(1L, "PAYSTACK", "txn_123");
+
+        assertThat(response.getStatus()).isEqualTo(PaymentStatus.PENDING);
+        assertThat(response.getGatewayProvider()).isEqualTo("PAYSTACK");
+        assertThat(response.getTransactionId()).isEqualTo("txn_123");
+
+        verify(orderRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should throw exception when marking non-existent payment as processing")
+    void shouldThrowExceptionWhenMarkingNonExistentPaymentProcessing() {
+
+        when(paymentRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> paymentServiceImpl.markPaymentProcessing(1L, "PAYSTACK", "txn_123")
+        );
+
+        assertThat(exception.getMessage()).isEqualTo("Payment not found.");
+        assertThat(exception.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(paymentRepository, never()).save(any());
+    }
 
 
 

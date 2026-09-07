@@ -55,6 +55,18 @@ public class PaymentServiceImpl implements PaymentService {
         return mapToResponse(savedPayment);
     }
 
+    @Transactional
+    @Override
+    public PaymentResponseDto getPaymentById(Long userId, Long paymentId) {
+
+        Payment payment = paymentRepository.findByPaymentIdAndUser_UserId(paymentId, userId)
+                .orElseThrow(() -> new AppException(
+                        "Payment not found.",
+                        HttpStatus.NOT_FOUND
+                ));
+
+        return mapToResponse(payment);
+    }
 
     private PaymentResponseDto mapToResponse(Payment payment) {
         return PaymentResponseDto.builder()

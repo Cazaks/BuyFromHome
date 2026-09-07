@@ -126,6 +126,60 @@ class PaymentServiceImplTest {
     }
 
 
+    // ==========================
+    // GET PAYMENT TESTS
+    // ==========================
+
+    @Test
+    @DisplayName("Should get payment by id successfully when owned by the user")
+    void shouldGetPaymentByIdSuccessfully() {
+
+        User user = buildUser();
+        Order order = buildOrder(1L, new BigDecimal("5000.00"));
+        Payment payment = buildPayment(user, order, 1L, PaymentStatus.PENDING);
+
+        when(paymentRepository.findByPaymentIdAndUser_UserId(1L, user.getUserId()))
+                .thenReturn(Optional.of(payment));
+
+        PaymentResponseDto response =
+                paymentServiceImpl.getPaymentById(user.getUserId(), 1L);
+
+        assertThat(response.getPaymentId()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when payment does not belong to the requesting user")
+    void shouldThrowExceptionWhenPaymentDoesNotBelongToUser() {
+
+        when(paymentRepository.findByPaymentIdAndUser_UserId(1L, 99L))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> paymentServiceImpl.getPaymentById(99L, 1L)
+        );
+
+        assertThat(exception.getMessage()).isEqualTo("Payment not found.");
+        assertThat(exception.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when getting non-existent payment")
+    void shouldThrowExceptionWhenGettingNonExistentPayment() {
+
+        when(paymentRepository.findByPaymentIdAndUser_UserId(1L, 1L))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> paymentServiceImpl.getPaymentById(1L, 1L)
+        );
+
+        assertThat(exception.getMessage()).isEqualTo("Payment not found.");
+        assertThat(exception.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+
 
     // ==========================
     // TEST HELPERS

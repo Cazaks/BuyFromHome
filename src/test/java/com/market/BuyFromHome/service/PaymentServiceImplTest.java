@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -178,6 +179,29 @@ class PaymentServiceImplTest {
         assertThat(exception.getMessage()).isEqualTo("Payment not found.");
         assertThat(exception.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
     }
+
+    @Test
+    @DisplayName("Should get all payments for a user")
+    void shouldGetPaymentsForUser() {
+
+        User user = buildUser();
+        Order order = buildOrder(1L, new BigDecimal("5000.00"));
+        Payment payment = buildPayment(user, order, 1L, PaymentStatus.SUCCESS);
+
+        when(paymentRepository.findByUser_UserId(user.getUserId()))
+                .thenReturn(List.of(payment));
+
+        List<PaymentResponseDto> responses =
+                paymentServiceImpl.getPaymentsForUser(user.getUserId());
+
+        assertThat(responses).hasSize(1);
+        assertThat(responses.get(0).getPaymentId()).isEqualTo(1L);
+    }
+
+    // ==========================
+    // MARK PROCESSING TESTS
+    // ==========================
+
 
 
 

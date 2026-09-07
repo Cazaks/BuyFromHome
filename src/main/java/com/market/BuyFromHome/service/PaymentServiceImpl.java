@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
@@ -67,6 +69,41 @@ public class PaymentServiceImpl implements PaymentService {
 
         return mapToResponse(payment);
     }
+
+    @Transactional
+    @Override
+    public List<PaymentResponseDto> getPaymentsForUser(Long userId) {
+        return paymentRepository.findByUser_UserId(userId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // NOTE: the three methods below change a payment's state directly and,
+    // through it, the order's paid/unpaid status. They must NOT be reachable
+    // from a regular authenticated-customer endpoint — only from a verified
+    // gateway webhook callback or an admin-only route. Do not wire these to
+    // a public controller method without that access control in place.
+
+    @Transactional
+    @Override
+    public PaymentResponseDto markPaymentProcessing(Long paymentId, String gatewayProvider, String transactionId) {
+
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new AppException(
+                        "Payment not found.",
+                        HttpStatus.NOT_FOUND
+                ));
+
+        payment.setStatus(PaymentStatus.PROCESSING);
+        payment.setGatewayProvider(gatewayProvider);
+        payment.setTransactionId(transactionId);
+
+        Payment updatedPayment = paymentRepository.save(payment);
+
+        return mapToResponse(updatedPayment);
+    }
+
 
     private PaymentResponseDto mapToResponse(Payment payment) {
         return PaymentResponseDto.builder()

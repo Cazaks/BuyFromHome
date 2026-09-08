@@ -15,4 +15,7 @@ public interface ReviewService {
 
     @Transactional
     ReviewResponseDto getReviewById(Long reviewId);
+
+    @Transactional
+    ReviewResponseDto updateReview(Long userId, Long reviewId, ReviewRequestDto requestDto);
 }

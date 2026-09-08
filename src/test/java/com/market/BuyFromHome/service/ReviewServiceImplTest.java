@@ -255,7 +255,55 @@ class ReviewServiceImplTest {
         assertThat(exception.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
+    // ==========================
+    // UPDATE REVIEW TESTS
+    // ==========================
 
+    @Test
+    @DisplayName("Should update own review successfully")
+    void shouldUpdateReviewSuccessfully() {
+
+        User user = buildUser();
+        Product product = buildProduct(10L);
+        Order order = buildDeliveredOrder(1L, product);
+        Review review = buildReview(1L, user, product, order);
+
+        ReviewRequestDto requestDto = buildRequestDto(product.getProductId(), order.getOrderId());
+        requestDto.setRating(3);
+        requestDto.setComment("Updated comment");
+
+        when(reviewRepository.findByReviewIdAndUser_UserId(1L, user.getUserId()))
+                .thenReturn(Optional.of(review));
+
+        when(reviewRepository.save(any(Review.class)))
+                .thenAnswer(i -> i.getArgument(0));
+
+        ReviewResponseDto response =
+                reviewServiceImpl.updateReview(user.getUserId(), 1L, requestDto);
+
+        assertThat(response.getRating()).isEqualTo(3);
+        assertThat(response.getComment()).isEqualTo("Updated comment");
+    }
+
+    @Test
+    @DisplayName("Should throw exception when updating a review that isn't the user's own")
+    void shouldThrowExceptionWhenUpdatingSomeoneElsesReview() {
+
+        ReviewRequestDto requestDto = buildRequestDto(10L, 1L);
+
+        when(reviewRepository.findByReviewIdAndUser_UserId(1L, 99L))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> reviewServiceImpl.updateReview(99L, 1L, requestDto)
+        );
+
+        assertThat(exception.getMessage()).isEqualTo("Review not found.");
+        assertThat(exception.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(reviewRepository, never()).save(any());
+    }
 
     // ==========================
     // TEST HELPERS

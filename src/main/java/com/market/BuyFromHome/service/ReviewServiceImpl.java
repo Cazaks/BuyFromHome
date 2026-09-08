@@ -120,6 +120,27 @@ public class ReviewServiceImpl implements ReviewService {
         return mapToResponse(review);
     }
 
+    @Transactional
+    @Override
+    public ReviewResponseDto updateReview(Long userId, Long reviewId, ReviewRequestDto requestDto) {
+
+        Review review = reviewRepository.findByReviewIdAndUser_UserId(reviewId, userId)
+                .orElseThrow(() -> new AppException(
+                        "Review not found.",
+                        HttpStatus.NOT_FOUND
+                ));
+
+        // Rating/comment can change - the product, user, and order this
+        // review is tied to cannot, since those are what proved the
+        // purchase in the first place.
+        review.setRating(requestDto.getRating());
+        review.setComment(requestDto.getComment());
+
+        Review updatedReview = reviewRepository.save(review);
+
+        return mapToResponse(updatedReview);
+    }
+
     private ReviewResponseDto mapToResponse(Review review) {
         return ReviewResponseDto.builder()
                 .reviewId(review.getReviewId())

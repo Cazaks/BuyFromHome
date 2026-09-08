@@ -12,4 +12,7 @@ public interface ReviewService {
 
     @Transactional
     List<ReviewResponseDto> getReviewsForProduct(Long productId);
+
+    @Transactional
+    ReviewResponseDto getReviewById(Long reviewId);
 }

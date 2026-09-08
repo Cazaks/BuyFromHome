@@ -107,6 +107,19 @@ public class ReviewServiceImpl implements ReviewService {
                 .toList();
     }
 
+    @Transactional
+    @Override
+    public ReviewResponseDto getReviewById(Long reviewId) {
+
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new AppException(
+                        "Review not found.",
+                        HttpStatus.NOT_FOUND
+                ));
+
+        return mapToResponse(review);
+    }
+
     private ReviewResponseDto mapToResponse(Review review) {
         return ReviewResponseDto.builder()
                 .reviewId(review.getReviewId())

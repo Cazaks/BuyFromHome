@@ -222,6 +222,39 @@ class ReviewServiceImplTest {
         assertThat(responses.get(0).getReviewId()).isEqualTo(1L);
     }
 
+    @Test
+    @DisplayName("Should get review by id")
+    void shouldGetReviewByIdSuccessfully() {
+
+        User user = buildUser();
+        Product product = buildProduct(10L);
+        Order order = buildDeliveredOrder(1L, product);
+        Review review = buildReview(1L, user, product, order);
+
+        when(reviewRepository.findById(1L))
+                .thenReturn(Optional.of(review));
+
+        ReviewResponseDto response = reviewServiceImpl.getReviewById(1L);
+
+        assertThat(response.getReviewId()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when review does not exist")
+    void shouldThrowExceptionWhenReviewNotFound() {
+
+        when(reviewRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> reviewServiceImpl.getReviewById(1L)
+        );
+
+        assertThat(exception.getMessage()).isEqualTo("Review not found.");
+        assertThat(exception.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
 
 
     // ==========================

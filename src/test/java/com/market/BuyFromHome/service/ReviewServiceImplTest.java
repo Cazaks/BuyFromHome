@@ -200,6 +200,31 @@ class ReviewServiceImplTest {
 
 
     // ==========================
+    // GET REVIEW TESTS
+    // ==========================
+
+    @Test
+    @DisplayName("Should get all reviews for a product")
+    void shouldGetReviewsForProduct() {
+
+        User user = buildUser();
+        Product product = buildProduct(10L);
+        Order order = buildDeliveredOrder(1L, product);
+        Review review = buildReview(1L, user, product, order);
+
+        when(reviewRepository.findByProduct_ProductId(product.getProductId()))
+                .thenReturn(List.of(review));
+
+        List<ReviewResponseDto> responses =
+                reviewServiceImpl.getReviewsForProduct(product.getProductId());
+
+        assertThat(responses).hasSize(1);
+        assertThat(responses.get(0).getReviewId()).isEqualTo(1L);
+    }
+
+
+
+    // ==========================
     // TEST HELPERS
     // ==========================
 

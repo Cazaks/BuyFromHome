@@ -17,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class ReviewServiceImpl implements ReviewService {
@@ -94,6 +96,15 @@ public class ReviewServiceImpl implements ReviewService {
         Review savedReview = reviewRepository.save(review);
 
         return mapToResponse(savedReview);
+    }
+
+    @Transactional
+    @Override
+    public List<ReviewResponseDto> getReviewsForProduct(Long productId) {
+        return reviewRepository.findByProduct_ProductId(productId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     private ReviewResponseDto mapToResponse(Review review) {

@@ -18,4 +18,10 @@ public interface PaymentService {
 
     @Transactional
     PaymentResponseDto markPaymentProcessing(Long paymentId, String gatewayProvider, String transactionId);
+
+    @Transactional
+    PaymentResponseDto markPaymentSuccess(Long paymentId);
+
+    @Transactional
+    PaymentResponseDto markPaymentFailed(Long paymentId, String failureReason);
 }

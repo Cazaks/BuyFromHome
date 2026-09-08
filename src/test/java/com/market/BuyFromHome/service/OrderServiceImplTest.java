@@ -506,9 +506,9 @@ class OrderServiceImplTest {
                 .thenAnswer(i -> i.getArgument(0));
 
         OrderResponseDto response =
-                orderServiceImpl.updatePaymentStatus(order.getOrderId(), PaymentStatus.PAID);
+                orderServiceImpl.updatePaymentStatus(order.getOrderId(), PaymentStatus.SUCCESS);
 
-        assertThat(response.getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
+        assertThat(response.getPaymentStatus()).isEqualTo(PaymentStatus.SUCCESS);
     }
 
     @Test
@@ -519,7 +519,7 @@ class OrderServiceImplTest {
 
         AppException exception = assertThrows(
                 AppException.class,
-                () -> orderServiceImpl.updatePaymentStatus(99L, PaymentStatus.PAID)
+                () -> orderServiceImpl.updatePaymentStatus(99L, PaymentStatus.SUCCESS)
         );
 
         assertThat(exception.getMessage()).isEqualTo("Order not found.");

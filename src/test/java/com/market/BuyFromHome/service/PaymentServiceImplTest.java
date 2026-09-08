@@ -126,6 +126,71 @@ class PaymentServiceImplTest {
         verify(paymentRepository, never()).save(any());
     }
 
+    @Test
+    @DisplayName("Should throw exception when order has already been paid for")
+    void shouldThrowExceptionWhenOrderAlreadyPaid() {
+
+        User user = buildUser();
+        Order order = buildOrder(1L, new BigDecimal("50000.00"));
+        PaymentRequestDto requestDto = buildRequestDto(order.getOrderId());
+
+        Payment existingSuccessfulPayment =
+                buildPayment(user, order, 1L, PaymentStatus.SUCCESS);
+
+        when(userRepository.findById(user.getUserId()))
+                .thenReturn(Optional.of(user));
+
+        when(orderRepository.findByOrderIdAndUser_UserId(order.getOrderId(), user.getUserId()))
+                .thenReturn(Optional.of(order));
+
+        when(paymentRepository.findByOrder_OrderId(order.getOrderId()))
+                .thenReturn(List.of(existingSuccessfulPayment));
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> paymentServiceImpl.createPayment(user.getUserId(), requestDto)
+        );
+
+        assertThat(exception.getMessage()).isEqualTo("This order has already been paid for.");
+        assertThat(exception.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+
+        verify(paymentRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should allow new payment when previous payments exist but none succeeded")
+    void shouldAllowNewPaymentWhenPreviousPaymentsFailed() {
+
+        User user = buildUser();
+        Order order = buildOrder(1L, new BigDecimal("50000.00"));
+        PaymentRequestDto requestDto = buildRequestDto(order.getOrderId());
+
+        Payment failedPayment =
+                buildPayment(user, order, 1L, PaymentStatus.FAILED);
+
+        when(userRepository.findById(user.getUserId()))
+                .thenReturn(Optional.of(user));
+
+        when(orderRepository.findByOrderIdAndUser_UserId(order.getOrderId(), user.getUserId()))
+                .thenReturn(Optional.of(order));
+
+        when(paymentRepository.findByOrder_OrderId(order.getOrderId()))
+                .thenReturn(List.of(failedPayment));
+
+        when(paymentRepository.save(any(Payment.class)))
+                .thenAnswer(i -> {
+                    Payment payment = i.getArgument(0);
+                    payment.setPaymentId(2L);
+                    return payment;
+                });
+
+        PaymentResponseDto response =
+                paymentServiceImpl.createPayment(user.getUserId(), requestDto);
+
+        assertThat(response.getStatus()).isEqualTo(PaymentStatus.PENDING);
+        verify(paymentRepository).save(any(Payment.class));
+    }
+
 
     // ==========================
     // GET PAYMENT TESTS
@@ -235,13 +300,114 @@ class PaymentServiceImplTest {
 
         AppException exception = assertThrows(
                 AppException.class,
-                () -> paymentServiceImpl.markPaymentProcessing(1L, "PAYSTACK", "txn_123")
+                () -> paymentServiceImpl.markPaymentProcessing(
+                        1L, "PAYSTACK", "txn_123")
         );
 
         assertThat(exception.getMessage()).isEqualTo("Payment not found.");
         assertThat(exception.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
 
         verify(paymentRepository, never()).save(any());
+    }
+
+    // ==========================
+    // MARK SUCCESS TESTS
+    // ==========================
+
+
+    @Test
+    @DisplayName("Should mark payment as success, set paidAt, and sync order payment status")
+    void shouldMarkPaymentSuccessSuccessfully() {
+
+        User user = buildUser();
+        Order order = buildOrder(1L, new BigDecimal("5000.00"));
+        Payment payment = buildPayment(user, order, 1L, PaymentStatus.PENDING);
+
+        when(paymentRepository.findById(1L))
+                .thenReturn(Optional.of(payment));
+
+        when(paymentRepository.save(any(Payment.class)))
+                .thenAnswer(i -> i.getArgument(0));
+
+        when(orderRepository.save(any(Order.class)))
+                .thenAnswer(i -> i.getArgument(0));
+
+        PaymentResponseDto response =
+                paymentServiceImpl.markPaymentSuccess(1L);
+
+        assertThat(response.getStatus()).isEqualTo(PaymentStatus.SUCCESS);
+        assertThat(response.getPaidAt()).isNotNull();
+        assertThat(order.getPaymentStatus()).isEqualTo(PaymentStatus.SUCCESS);
+
+        verify(orderRepository).save(order);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when marking non-existent payment as success")
+    void shouldThrowExceptionWhenMarkingNonExistentPaymentSuccess() {
+
+        when(paymentRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> paymentServiceImpl.markPaymentSuccess(1L)
+        );
+
+        assertThat(exception.getMessage()).isEqualTo("Payment not found.");
+        assertThat(exception.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(paymentRepository, never()).save(any());
+        verify(orderRepository, never()).save(any());
+    }
+
+    // ==========================
+    // MARK FAILED TESTS
+    // ==========================
+
+    @Test
+    @DisplayName("Should mark payment as failed with reason and sync order payment status")
+    void shouldMarkPaymentFailedSuccessfully() {
+
+        User user = buildUser();
+        Order order = buildOrder(1L, new BigDecimal("5000.00"));
+        Payment payment = buildPayment(user, order, 1L, PaymentStatus.PENDING);
+
+        when(paymentRepository.findById(1L))
+                .thenReturn(Optional.of(payment));
+
+        when(paymentRepository.save(any(Payment.class)))
+                .thenAnswer(i -> i.getArgument(0));
+
+        when(orderRepository.save(any(Order.class)))
+                .thenAnswer(i -> i.getArgument(0));
+
+        PaymentResponseDto response =
+                paymentServiceImpl.markPaymentFailed(1L, "Card declined");
+
+        assertThat(response.getStatus()).isEqualTo(PaymentStatus.FAILED);
+        assertThat(order.getPaymentStatus()).isEqualTo(PaymentStatus.FAILED);
+
+        verify(orderRepository).save(order);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when marking non-existent payment as failed")
+    void shouldThrowExceptionWhenMarkingNonExistentPaymentFailed() {
+
+        when(paymentRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> paymentServiceImpl.markPaymentFailed(1L, "Card declined")
+        );
+
+        assertThat(exception.getMessage()).isEqualTo("Payment not found.");
+        assertThat(exception.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(paymentRepository, never()).save(any());
+        verify(orderRepository, never()).save(any());
     }
 
 

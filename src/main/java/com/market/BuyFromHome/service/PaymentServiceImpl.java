@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -43,11 +44,22 @@ public class PaymentServiceImpl implements PaymentService {
                         HttpStatus.NOT_FOUND
                 ));
 
+        boolean alreadyPaid = paymentRepository.findByOrder_OrderId(order.getOrderId())
+                .stream()
+                .anyMatch(p -> p.getStatus() == PaymentStatus.SUCCESS);
+
+        if (alreadyPaid) {
+            throw new AppException(
+                    "This order has already been paid for.",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
         Payment payment = Payment.builder()
                 .user(user)
                 .order(order)
                 .amount(order.getTotalAmount())
-                .currency(DEFAULT_CURRENCY)
+                .currency("NGN")
                 .paymentMethod(requestDto.getPaymentMethod())
                 .status(PaymentStatus.PENDING)
                 .build();
@@ -100,6 +112,50 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setTransactionId(transactionId);
 
         Payment updatedPayment = paymentRepository.save(payment);
+
+        return mapToResponse(updatedPayment);
+    }
+
+    @Transactional
+    @Override
+    public PaymentResponseDto markPaymentSuccess(Long paymentId) {
+
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new AppException(
+                        "Payment not found.",
+                        HttpStatus.NOT_FOUND
+                ));
+
+        payment.setStatus(PaymentStatus.SUCCESS);
+        payment.setPaidAt(LocalDateTime.now());
+
+        Payment updatedPayment = paymentRepository.save(payment);
+
+        Order order = updatedPayment.getOrder();
+        order.setPaymentStatus(PaymentStatus.SUCCESS);
+        orderRepository.save(order);
+
+        return mapToResponse(updatedPayment);
+    }
+
+    @Transactional
+    @Override
+    public PaymentResponseDto markPaymentFailed(Long paymentId, String failureReason) {
+
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new AppException(
+                        "Payment not found.",
+                        HttpStatus.NOT_FOUND
+                ));
+
+        payment.setStatus(PaymentStatus.FAILED);
+        payment.setFailureReason(failureReason);
+
+        Payment updatedPayment = paymentRepository.save(payment);
+
+        Order order = updatedPayment.getOrder();
+        order.setPaymentStatus(PaymentStatus.FAILED);
+        orderRepository.save(order);
 
         return mapToResponse(updatedPayment);
     }

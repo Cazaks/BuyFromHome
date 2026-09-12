@@ -13,4 +13,6 @@ public class ProductCategoryRequestDto {
 
     @NotBlank(message = "Product description is required")
     private String categoryDescription;
+
+    private String imageUrl;
 }

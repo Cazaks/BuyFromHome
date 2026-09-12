@@ -155,6 +155,7 @@ public class ProductServiceImpl implements ProductService{
                 .imageUrl(product.getImageUrl())
                 .productCategoryId(product.getCategory().getId())
                 .productCategoryName(product.getCategory().getName())
+                .productCategoryImageUrl(product.getCategory().getImageUrl())
                 .enabled(product.isEnabled())
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())

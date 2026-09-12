@@ -23,6 +23,8 @@ public class ProductResponseDto {
 
     private String productCategoryName;
 
+    private String productCategoryImageUrl;
+
     private boolean enabled;
 
     private LocalDateTime createdAt;

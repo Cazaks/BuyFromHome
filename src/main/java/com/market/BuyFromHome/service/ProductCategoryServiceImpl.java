@@ -33,6 +33,7 @@ public class ProductCategoryServiceImpl implements ProductCategoryService{
         ProductCategory productCategory = ProductCategory.builder()
                 .name(requestDto.getCategoryName())
                 .description(requestDto.getCategoryDescription())
+                .imageUrl(requestDto.getImageUrl())
                 .enabled(true)
                 .build();
 
@@ -78,6 +79,7 @@ public class ProductCategoryServiceImpl implements ProductCategoryService{
 
         category.setName(requestDto.getCategoryName());
         category.setDescription(requestDto.getCategoryDescription());
+        category.setImageUrl(requestDto.getImageUrl());
 
         ProductCategory updatedCategory =
                 productCategoryRepository.save(category);
@@ -147,6 +149,7 @@ public class ProductCategoryServiceImpl implements ProductCategoryService{
                 .id(category.getId())
                 .categoryName(category.getName())
                 .categoryDescription(category.getDescription())
+                .imageUrl(category.getImageUrl())
                 .enabled(category.isEnabled())
                 .build();
     }

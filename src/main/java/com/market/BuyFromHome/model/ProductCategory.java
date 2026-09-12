@@ -26,6 +26,9 @@ public class ProductCategory {
 
     private String description;
 
+    @Column(length = 1000)
+    private String imageUrl;
+
     private boolean enabled = true;
 
     @Builder.Default

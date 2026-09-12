@@ -12,5 +12,6 @@ public class ProductCategoryResponseDto {
     private Long id;
     private String categoryName;
     private String categoryDescription;
+    private String imageUrl;
     private boolean enabled;
 }
